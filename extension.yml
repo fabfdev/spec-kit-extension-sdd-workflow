@@ -14,6 +14,10 @@ requires:
 
 provides:
   commands:
+    - name: "speckit.sdd-workflow.setup"
+      file: "commands/speckit.sdd-workflow.setup.md"
+      description: "Initialize the SDD workflow directory structure (roadmap, health/, tasks/). Run once after installing the extension."
+
     - name: "speckit.sdd-workflow.product-prd"
       file: "commands/speckit.sdd-workflow.product-prd.md"
       description: "Create the product-level PRD (docs/core/prd.md) — the founding document. Run once at project start."
