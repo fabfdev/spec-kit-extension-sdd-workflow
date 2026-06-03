@@ -12,6 +12,34 @@ handoffs:
 $ARGUMENTS
 ```
 
+## Step 0 — New or existing project?
+
+Ask the user:
+> "Is this a **new project** (no code yet) or an **existing project** (code already exists)?"
+
+- If **new** → proceed to Step 1.
+- If **existing** → execute Step 0.1 before continuing.
+
+## Step 0.1 — Architectural reading of existing project
+
+Read the project root directory and identify the project type and ecosystem based on what you find. Use your knowledge of each ecosystem — do not rely on a fixed list of rules.
+
+Then read the project in 3 layers:
+
+**Layer 1 — Structure**
+Read the files that reveal modules, targets, and external dependencies (build files, manifests, lockfiles, workspace definitions). For private or external dependencies (private packages, closed-source SDKs, company bundles), treat them as black boxes — document only the integration surface, not their internals.
+
+**Layer 2 — Architecture**
+Read the files that reveal architectural contracts without reading implementations: interfaces, protocols, abstract/base classes, dependency injection setup, navigation/routing definitions. Identify the architectural pattern in use (MVVM, Clean Architecture, MVC, hexagonal, etc.).
+
+**Layer 3 — Integrations**
+Identify all contact points with external systems: third-party APIs, private bundles, SDKs, databases, queues. For each, document only the surface (what the project calls/receives), not the internals.
+
+After the 3 layers, present a summary of what you understood to the user for validation before continuing. Explicitly ask:
+> "Does this reflect the project correctly? Is there anything I missed or misunderstood?"
+
+Once validated, continue to Step 1. Skip any questions in Steps 1.5 and 2 that were already answered by the reading — only ask for what is still unknown.
+
 ## Step 1 — Read the product PRD
 
 Read `docs/core/prd.md` and extract:
