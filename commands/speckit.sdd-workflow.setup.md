@@ -113,7 +113,7 @@ Run lint and typecheck commands defined in the project. Report any errors.
 
 Present the report to the user. Do not act on findings without explicit instruction.
 If the user asks to fix a bug, invoke `/speckit.sdd-workflow.fix-bug`.
-If the user asks to address technical debt, create a branch and a TD-XXX document first.
+If the user asks to address technical debt, invoke `/speckit.sdd-workflow.fix-debt`.
 ```
 
 ---
