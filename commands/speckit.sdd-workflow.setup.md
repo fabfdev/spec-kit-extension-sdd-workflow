@@ -1,5 +1,5 @@
 ---
-description: Initialize the SDD workflow directory structure. Run once after installing the extension. Creates docs/core/roadmap.md, docs/health/ scaffold, and docs/tasks/ directory.
+description: Initialize the SDD workflow for a new project. Creates the local docs/ structure, provisions the Notion Kanban database, and saves .sdd-notion.json. Run once after installing the extension.
 handoffs:
   - label: Create Product PRD
     agent: speckit.sdd-workflow.product-prd
@@ -8,55 +8,88 @@ handoffs:
 
 ## Overview
 
-This command scaffolds the directory structure required by the SDD workflow. Run it once after installing the extension on a new project.
+This command bootstraps a new project for the SDD workflow. It creates the minimal local directory structure and provisions the Notion Kanban database that will track all features, bugs, and tech debt.
 
-It creates the following files if they do not already exist:
-
-- `docs/core/roadmap.md` — macro tracking of all features
-- `docs/health/scan.md` — guide for running health scans
-- `docs/health/status.md` — living dashboard of open bugs and debt
-- `docs/health/fix.md` — process guide for bugs and technical debt
-- `docs/health/bugs/.gitkeep` — directory for bug documents
-- `docs/health/debt/.gitkeep` — directory for debt documents
-- `docs/tasks/.gitkeep` — directory for feature task files
-
-## Execution
-
-### Step 1 — Check for existing files
-
-For each file listed above, check if it already exists. Skip creation for files that already exist — never overwrite.
-
-### Step 2 — Create scaffold
-
-Create any missing files with the content below.
+Run it **once** per project, right after installing the extension.
 
 ---
 
-**`docs/core/roadmap.md`**
+## Step 1 — Collect project name
 
-```markdown
-# [Project Name] — Implementation Roadmap
+Ask the user:
+> "What is the name of this project? (Used to name the Notion page and database)"
 
-Macro view of all project features. Updated automatically by the SDD workflow commands.
+Wait for the answer before proceeding.
 
-## Status Legend
+---
 
-| Status | Meaning |
-|--------|---------|
-| `planning` | PRD created, techspec/tasks not yet done |
-| `specced` | PRD + techspec done, tasks not yet created |
-| `ready` | PRD + techspec + tasks done, implementation not started |
-| `in_progress` | At least one task being implemented |
-| `completed` | All tasks marked done |
+## Step 2 — Set up Notion structure
 
-## Features
+### 2a — Find or create "SDD Projects" root page
 
-| Feature | Slug | Status | Tasks |
-|---------|------|--------|-------|
-| — | — | — | — |
+Use the Notion MCP to search the workspace for a page titled exactly **"SDD Projects"**.
+
+- If found: record its page ID as `projects_page_id`. Do not create a new one.
+- If not found: use the Notion MCP to create a new page at the workspace root titled **"SDD Projects"**. Record its page ID as `projects_page_id`.
+
+### 2b — Create the project page
+
+Use the Notion MCP to create a new child page inside `projects_page_id` titled **"[Project Name]"** (the name the user provided in Step 1).
+
+Record its page ID as `project_page_id`.
+
+### 2c — Create the Kanban database
+
+Use the Notion MCP to create a new database inside `project_page_id` titled **"[Project Name] — Kanban"** with these properties:
+
+| Property | Type | Options |
+|---|---|---|
+| `Name` | title | — |
+| `Type` | select | Feature · Bug · Tech Debt |
+| `Status` | select | Planned · Specced · Ready · In Progress · In Review · Completed · Reported · Resolved · Abandoned |
+| `Slug` | rich_text | — |
+| `Branch` | rich_text | — |
+| `Tasks Done` | number | — |
+| `Tasks Total` | number | — |
+| `PR URL` | url | — |
+| `Priority` | select | Low · Medium · High |
+| `Notes` | rich_text | — |
+
+Record the database ID as `database_id`.
+
+---
+
+## Step 3 — Save .sdd-notion.json
+
+Create `.sdd-notion.json` at the project root with:
+
+```json
+{
+  "project_name": "[Project Name]",
+  "projects_page_id": "[projects_page_id]",
+  "project_page_id": "[project_page_id]",
+  "database_id": "[database_id]"
+}
 ```
 
 ---
+
+## Step 4 — Gitignore .sdd-notion.json
+
+Check if `.gitignore` exists in the project root.
+
+- If it exists: append `.sdd-notion.json` on a new line (only if not already present).
+- If it does not exist: create `.gitignore` containing:
+
+```
+.sdd-notion.json
+```
+
+---
+
+## Step 5 — Create local directory scaffold
+
+Create the following file if it does not already exist. Skip if it already exists — never overwrite.
 
 **`docs/health/scan.md`**
 
@@ -73,21 +106,19 @@ Run after merging any PR to keep the project health visible.
 
 ## What to scan
 
-### 1 — Open bugs
+### 1 — Open bugs and tech debt
 
-Check `docs/health/bugs/` for any files with `Status: aberto`.
-List them with title, impact, and date opened.
+Use the Notion MCP to query the Kanban database (read `database_id` from `.sdd-notion.json`) with two filters:
+- `Type` = Bug AND `Status` != Resolved AND `Status` != Abandoned
+- `Type` = Tech Debt AND `Status` != Resolved AND `Status` != Abandoned
 
-### 2 — Technical debt
+List all results with Name, Priority, and Status.
 
-Check `docs/health/debt/` for any files with `Status: aberto`.
-List them with title, priority, and date registered.
-
-### 3 — Failing or skipped tests
+### 2 — Failing or skipped tests
 
 Run the project's test suite and report any failures or skipped tests.
 
-### 4 — Lint / type errors
+### 3 — Lint / type errors
 
 Run lint and typecheck commands defined in the project. Report any errors.
 
@@ -97,10 +128,10 @@ Run lint and typecheck commands defined in the project. Report any errors.
 ## Health Report — YYYY-MM-DD
 
 ### Open bugs
-- BUG-001 — Title (impact: high, opened YYYY-MM-DD)
+- [Bug Name] (priority: high, status: Reported)
 
-### Technical debt
-- TD-001 — Title (priority: high, opened YYYY-MM-DD)
+### Open tech debt
+- [Debt Name] (priority: medium, status: In Progress)
 
 ### Tests
 ✓ X passing / ✗ Y failing / ⚠ Z skipped
@@ -118,127 +149,31 @@ If the user asks to address technical debt, invoke `/speckit.sdd-workflow.fix-de
 
 ---
 
-**`docs/health/status.md`**
-
-```markdown
-# Project Health Status
-
-## Open Bugs
-
-| ID | Title | Impact | Opened |
-|----|-------|--------|--------|
-| — | — | — | — |
-
-## Open Technical Debt
-
-| ID | Title | Priority | Opened |
-|----|-------|----------|--------|
-| — | — | — | — |
-
----
-
-*Updated manually after each health scan. See `scan.md` for the scan guide.*
-```
-
----
-
-**`docs/health/fix.md`**
-
-```markdown
-# Fix Guide — Bugs and Technical Debt
-
-## Bug fix lifecycle
-
-\`\`\`
-BUG registered → branch bugfix/BUG-XXX-title → implementation → tests → user validation → commit → PR
-\`\`\`
-
-### Branch naming
-\`\`\`
-bugfix/BUG-XXX-short-title
-\`\`\`
-
-### Commit format
-\`\`\`
-fix: concise description (BUG-XXX)
-\`\`\`
-
-### Bug document location
-\`\`\`
-docs/health/bugs/BUG-XXX-title.md
-\`\`\`
-
-### Status values
-- `aberto` — identified, not yet fixed
-- `resolvido` — fix committed and merged
-
----
-
-## Technical debt lifecycle
-
-\`\`\`
-TD registered → branch refactor/TD-XXX-title → implementation → tests → user validation → commit → PR
-\`\`\`
-
-### Branch naming
-\`\`\`
-refactor/TD-XXX-short-title
-\`\`\`
-
-### Commit format
-\`\`\`
-refactor: concise description (TD-XXX)
-\`\`\`
-
-### Debt document location
-\`\`\`
-docs/health/debt/TD-XXX-title.md
-\`\`\`
-
-### Status values
-- `aberto` — registered, not yet resolved
-- `resolvido` — addressed and merged
-
----
-
-## Absolute rules
-
-- Never fix bugs or debt on `main` directly
-- Tests must pass before presenting work to the user
-- User validates before any commit is made
-- Document status updated to `resolvido` only after the commit
-```
-
----
-
-**`docs/health/bugs/.gitkeep`**, **`docs/health/debt/.gitkeep`**, **`docs/tasks/.gitkeep`**
-
-Create these as empty files to initialize the directories.
-
----
-
-### Step 3 — Report
-
-List the files that were created and any that were skipped because they already existed.
-
-```
-SDD workflow structure initialized.
-
-Created:
-✓ docs/core/roadmap.md
-✓ docs/health/scan.md
-✓ docs/health/status.md
-✓ docs/health/fix.md
-✓ docs/health/bugs/
-✓ docs/health/debt/
-✓ docs/tasks/
-
-Next step: run /speckit.sdd-workflow.product-prd to create the product PRD.
-```
-
-### Step 4 — Commit
+## Step 6 — Commit scaffold
 
 ```bash
-git add docs/
+git add docs/health/scan.md .gitignore
 git commit -m "chore: initialize SDD workflow structure"
+```
+
+Note: `.sdd-notion.json` is gitignored and must NOT be committed.
+
+---
+
+## Step 7 — Report
+
+```
+SDD workflow initialized for [Project Name].
+
+Notion:
+✓ SDD Projects page: [projects_page_id]
+✓ Project page: [project_page_id]
+✓ Kanban database: [database_id]
+
+Local:
+✓ docs/health/scan.md
+✓ .gitignore (contains .sdd-notion.json)
+✓ .sdd-notion.json (gitignored — keep locally, do not commit)
+
+Next step: run /speckit.sdd-workflow.product-prd to create the product PRD.
 ```

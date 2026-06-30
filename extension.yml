@@ -3,8 +3,8 @@ schema_version: "1.0"
 extension:
   id: "sdd-workflow"
   name: "SDD Workflow Extra"
-  version: "1.0.0"
-  description: "Adds product-level PRD, Software Design Document (SDD), and bug fix workflow commands — the project inception and health management layer missing from spec-kit core."
+  version: "1.1.0"
+  description: "Adds product-level PRD, Software Design Document (SDD), Notion Kanban setup, and bug/tech debt workflow commands — the project inception and health management layer missing from spec-kit core. Bugs and tech debt are tracked as Notion pages; no local markdown files for health tracking."
   author: "Felipe Faustini"
   repository: "https://github.com/faustfelipe/spec-kit-extension-sdd-workflow"
   license: "MIT"
@@ -16,7 +16,7 @@ provides:
   commands:
     - name: "speckit.sdd-workflow.setup"
       file: "commands/speckit.sdd-workflow.setup.md"
-      description: "Initialize the SDD workflow directory structure (roadmap, health/, tasks/). Run once after installing the extension."
+      description: "Initialize the SDD workflow: creates local docs/ scaffold, provisions Notion Kanban database (SDD Projects > [Project] > database), and saves .sdd-notion.json. Run once per project."
 
     - name: "speckit.sdd-workflow.product-prd"
       file: "commands/speckit.sdd-workflow.product-prd.md"
@@ -28,7 +28,7 @@ provides:
 
     - name: "speckit.sdd-workflow.fix-bug"
       file: "commands/speckit.sdd-workflow.fix-bug.md"
-      description: "Register and fix a bug. Creates BUG-XXX in docs/health/bugs/, branches, fixes, tests, and opens a PR."
+      description: "Register and fix a bug as a Notion page (Type=Bug). Creates bugfix branch, fixes, runs tests, and opens a PR with Notion status tracking throughout."
 
 tags:
   - "sdd"
