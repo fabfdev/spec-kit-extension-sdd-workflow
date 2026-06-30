@@ -3,7 +3,7 @@ schema_version: "1.0"
 extension:
   id: "sdd-workflow"
   name: "SDD Workflow Extra"
-  version: "1.1.0"
+  version: "1.2.0"
   description: "Adds product-level PRD, Software Design Document (SDD), Notion Kanban setup, and bug/tech debt workflow commands — the project inception and health management layer missing from spec-kit core. Bugs and tech debt are tracked as Notion pages; no local markdown files for health tracking."
   author: "Felipe Faustini"
   repository: "https://github.com/faustfelipe/spec-kit-extension-sdd-workflow"
