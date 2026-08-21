@@ -1,6 +1,6 @@
 # spec-kit-extension-sdd-workflow
 
-A [Spec Kit](https://github.com/github/spec-kit) extension that adds the **project inception and health management layer** missing from Spec Kit core.
+A [Spec Kit](https://github.com/github/spec-kit) extension that adds the **project inception, health management, and parallel-work layer** missing from Spec Kit core.
 
 Designed to work alongside [`spec-kit-preset-sdd-workflow`](https://github.com/fabfdev/spec-kit-preset-sdd-workflow), which replaces Spec Kit's feature commands.
 
@@ -10,12 +10,13 @@ Designed to work alongside [`spec-kit-preset-sdd-workflow`](https://github.com/f
 
 | Aspect | Spec-kit + preset only | + SDD Workflow Extension |
 |--------|------------------------|--------------------------|
-| Project initialization | Manual | `/speckit.sdd-workflow.setup` scaffolds everything |
+| Project initialization | Manual | `/speckit.sdd-workflow.setup` scaffolds everything, including the Notion Kanban database |
 | Product context | None | `docs/core/prd.md` — vision, personas, KPIs, business rules |
 | Architecture context | None | `docs/core/sdd.md` — stack, patterns, naming conventions |
 | Feature command intelligence | Generic | All preset commands read `sdd.md` to avoid redundant questions and enforce consistent output |
-| Bug tracking | None | `BUG-XXX` docs with `bugfix/` branch, fix, tests, and PR |
-| Health dashboard | None | `docs/health/status.md`, `scan.md`, `fix.md` |
+| Bug tracking | None | Notion page (`Type = Bug`) + dedicated worktree on `bugfix/[slug]`, fix, tests, PR |
+| Tech debt tracking | None | Notion page (`Type = Tech Debt`) + dedicated worktree on `refactor/[slug]`, resolution, tests, PR |
+| Parallel work | Not supported | Every feature/bug/debt gets its own git worktree; `worktrees` and `finish` manage the lifecycle |
 
 ### Why `docs/core/sdd.md` matters
 
@@ -35,23 +36,25 @@ Without `sdd.md`, the preset commands still work — they just have less context
 ```mermaid
 flowchart TD
     subgraph inception["Project Inception (run once)"]
-        S["/speckit.sdd-workflow.setup\nScaffold docs/ structure"]
+        S["/speckit.sdd-workflow.setup\nScaffold docs/ + Notion Kanban DB"]
         S --> PP["/speckit.sdd-workflow.product-prd\ndocs/core/prd.md"]
         PP --> SDD["/speckit.sdd-workflow.sdd\ndocs/core/sdd.md"]
     end
 
     subgraph feature["Feature Cycle (repeat per feature)"]
-        SP["/speckit.specify\nspecs/NNN-slug/prd.md"]
+        SP["/speckit.specify\n.worktrees/slug on feature/slug"]
         SP --> CL["/speckit.clarify ✦ optional\nRefine PRD"]
-        CL --> PL["/speckit.plan\nspecs/NNN-slug/techspec.md"]
+        CL --> PL["/speckit.plan\nspecs/slug/techspec.md"]
         PL --> AN["/speckit.analyze ✦ read-only\nConsistency report"]
-        AN --> TA["/speckit.tasks\nspecs/NNN-slug/tasks.md + N_task.md"]
+        AN --> TA["/speckit.tasks\nspecs/slug/tasks.md + N_task.md"]
         TA --> IM["/speckit.implement × N\ncode commits + tracking commits"]
-        IM --> PR["gh pr create"]
+        IM --> FIN["/speckit.sdd-workflow.finish\nmerge PR, remove worktree, Notion: Completed"]
     end
 
     subgraph health["Maintenance"]
-        BUG["/speckit.sdd-workflow.fix-bug\nBUG-XXX → branch → fix → PR"]
+        BUG["/speckit.sdd-workflow.fix-bug\n.worktrees/bugfix-slug → fix → PR"]
+        DEBT["/speckit.sdd-workflow.fix-debt\n.worktrees/refactor-slug → resolve → PR"]
+        WT["/speckit.sdd-workflow.worktrees\nlist everything in progress, switch into one"]
     end
 
     inception --> feature
@@ -65,10 +68,33 @@ flowchart TD
 
 | Command | Artifact | Description |
 |---------|----------|-------------|
-| `/speckit.sdd-workflow.setup` | `docs/` structure | Initializes roadmap, health dashboards, and folder layout. **Run once after installing.** |
+| `/speckit.sdd-workflow.setup` | Notion Kanban DB, `docs/health/scan.md` | Provisions the Notion Kanban database and scaffolds the local `docs/` layout. **Run once after installing.** |
 | `/speckit.sdd-workflow.product-prd` | `docs/core/prd.md` | Creates the product-level PRD: vision, target users, personas, KPIs, user flows, and business rules |
 | `/speckit.sdd-workflow.sdd` | `docs/core/sdd.md` | Creates the Software Design Document: stack, folder structure, data model, naming conventions, test strategy. Collaborative session — agent researches libraries, questions decisions, suggests alternatives |
-| `/speckit.sdd-workflow.fix-bug` | `docs/health/bugs/BUG-XXX.md` | Registers a bug, creates `bugfix/BUG-XXX` branch, implements the fix, runs tests, opens PR |
+| `/speckit.sdd-workflow.fix-bug` | Notion page (`Type=Bug`) | Registers a bug, creates a dedicated worktree on `bugfix/[slug]`, implements the fix, runs tests, opens a PR |
+| `/speckit.sdd-workflow.fix-debt` | Notion page (`Type=Tech Debt`) | Registers tech debt, creates a dedicated worktree on `refactor/[slug]`, implements the resolution, runs tests, opens a PR |
+| `/speckit.sdd-workflow.worktrees` | — (read-only) | Lists every active worktree (features, bugs, debt) enriched with Notion status/priority/tasks, and lets you switch into one |
+| `/speckit.sdd-workflow.finish` | — | Merges the current worktree's PR (squash + delete branch), removes the worktree, updates Notion, returns to `main` |
+
+---
+
+## Worktrees: working on more than one thing at a time
+
+Every feature, bug fix, and tech-debt resolution gets its own git worktree — a separate working directory checked out to its own branch, living alongside your main checkout:
+
+```
+your-project/
+  .worktrees/
+    user-auth/          ← feature/user-auth
+    bugfix-null-ptr/     ← bugfix/null-ptr-on-login
+```
+
+This means two Claude Code sessions can work on two different things at the same time without one session's `git checkout` stepping on the other's. To work on something, `cd` into its worktree (or point a new Claude Code session at that path) and run the preset/extension commands from there as usual.
+
+- **See what's in progress:** `/speckit.sdd-workflow.worktrees` — lists every worktree with its Notion status, and offers to `cd` you into one.
+- **Wrap one up:** `/speckit.sdd-workflow.finish` — run from inside the worktree you're closing. Merges its PR, deletes the worktree and remote branch, updates Notion, and returns you to `main`.
+
+`/speckit.specify`, `/speckit.sdd-workflow.fix-bug`, and `/speckit.sdd-workflow.fix-debt` create these worktrees for you automatically — you don't need `git worktree` commands directly unless something goes wrong.
 
 ---
 
@@ -83,7 +109,7 @@ flowchart TD
 
 ```bash
 specify extension add sdd-workflow \
-  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.0.0.zip
+  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.3.0.zip
 ```
 
 ### Recommended: install with the companion preset
@@ -93,11 +119,11 @@ The preset replaces Spec Kit's core feature commands. Together, the preset + ext
 ```bash
 # 1. replace core commands with SDD workflow
 specify preset add sdd-workflow \
-  --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v1.1.0.zip
+  --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v1.3.0.zip
 
-# 2. add inception and health commands
+# 2. add inception, health, and worktree lifecycle commands
 specify extension add sdd-workflow \
-  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.0.0.zip
+  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.3.0.zip
 ```
 
 ---
@@ -111,9 +137,9 @@ specify extension add sdd-workflow \
 ```
 
 Creates:
-- `docs/core/roadmap.md`
-- `docs/health/status.md`, `scan.md`, `fix.md`
-- `docs/health/bugs/` and `docs/health/debt/` folders
+- The Notion Kanban database (properties: Name, Type, Status, Slug, Branch, Worktree Path, Tasks Done, Tasks Total, PR URL, Priority, Notes)
+- `.sdd-notion.json` (gitignored — holds the database ID)
+- `docs/health/scan.md`
 
 ### Step 2 — Define the product (once per project)
 
@@ -142,12 +168,20 @@ With inception done, run the feature cycle from the preset:
 /speckit.analyze
 /speckit.tasks
 /speckit.implement [task number]
+/speckit.sdd-workflow.finish
 ```
 
-### Step 5 — Bug tracking (as needed)
+### Step 5 — Bugs and tech debt (as needed)
 
 ```
-/speckit.sdd-workflow.fix-bug [describe the bug]
+/speckit.sdd-workflow.fix-bug  [describe the bug]
+/speckit.sdd-workflow.fix-debt [describe the debt]
+```
+
+### Step 6 — Check what's in progress (any time)
+
+```
+/speckit.sdd-workflow.worktrees
 ```
 
 ---
@@ -158,7 +192,7 @@ With inception done, run the feature cycle from the preset:
 # — Initialize a new project —
 /speckit.sdd-workflow.setup
 
-  Creates: docs/core/roadmap.md, docs/health/, docs/health/bugs/, docs/health/debt/
+  Creates: Notion Kanban DB, .sdd-notion.json, docs/health/scan.md
 
 # — Define the product —
 /speckit.sdd-workflow.product-prd
@@ -184,25 +218,38 @@ With inception done, run the feature cycle from the preset:
 # — From here, run the feature cycle —
 /speckit.specify I want to add a dashboard with usage metrics
 
-  Agent: reads docs/core/prd.md and sdd.md/Contexto do Projeto
+  Agent: reads docs/core/prd.md and sdd.md
   Skips questions already answered there
-  → specs/002-usage-dashboard/prd.md
+  → specs/usage-dashboard/prd.md
+  → worktree: .worktrees/usage-dashboard (branch feature/usage-dashboard)
 
 # — Bug appears in production —
 /speckit.sdd-workflow.fix-bug Dashboard crashes when date range spans multiple years
 
   Agent:
-    1. Creates docs/health/bugs/BUG-001-dashboard-date-crash.md
-       (impact, location, reproduction steps, root cause)
+    1. Creates a Notion page (Type=Bug): impact, location, reproduction steps, root cause
     2. Asks: fix now or defer?
-    3. Fix now → creates branch: bugfix/BUG-001-dashboard-date-crash
+    3. Fix now → creates worktree .worktrees/bugfix-dashboard-date-crash on branch bugfix/dashboard-date-crash
     4. Reads sdd.md to use correct conventions
     5. Implements fix, runs tests
     6. Presents for validation
     7. After approval:
-         commit: "fix: handle multi-year date range in dashboard (BUG-001)"
-         updates BUG-001 doc to: resolved
+         commit: "fix: handle multi-year date range in dashboard"
+         Notion page → Resolved
          opens PR
+
+# — Check what's in progress —
+/speckit.sdd-workflow.worktrees
+
+  1. .worktrees/usage-dashboard             — feature/usage-dashboard            — In Progress (2/5 tasks) — Priority: Medium
+  2. .worktrees/bugfix-dashboard-date-crash — bugfix/dashboard-date-crash        — Resolved (PR open)     — Priority: High
+  Switch to one? (number, or "no")
+
+# — Wrap up the bug once its PR is merged —
+/speckit.sdd-workflow.finish
+
+  Agent: finds the open PR, confirms, squash-merges + deletes remote branch
+  Removes .worktrees/bugfix-dashboard-date-crash, checks out main, pulls
 ```
 
 ---
@@ -226,29 +273,30 @@ specify preset remove sdd-workflow
 ## File structure generated
 
 ```
+.sdd-notion.json      ← gitignored, holds the Notion database ID
+
+.worktrees/
+  usage-dashboard/               ← feature/usage-dashboard
+  bugfix-dashboard-date-crash/   ← bugfix/dashboard-date-crash
+  refactor-legacy-auth/          ← refactor/legacy-auth
+
 docs/
   core/
-    roadmap.md          ← macro feature tracking (auto-updated by preset)
     prd.md              ← product PRD
     sdd.md              ← architecture document (most critical file)
   health/
-    status.md           ← living dashboard of open bugs and debt
     scan.md             ← guide: when and how to run health scans
-    fix.md              ← process guide for bugs and technical debt
-    bugs/
-      BUG-001-title.md
-      BUG-002-title.md
-    debt/
-      TD-001-title.md
 
 specs/                  ← created by the preset during feature cycles
-  001-[feature]/
+  [feature]/
     prd.md
     techspec.md
     tasks.md
     1_task.md
     ...
 ```
+
+Bugs and tech debt live entirely as Notion pages (`Type = Bug` / `Type = Tech Debt`) — no local markdown files are generated for them.
 
 ---
 
@@ -259,6 +307,8 @@ specify extension remove sdd-workflow
 specify extension add sdd-workflow \
   --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/vX.Y.Z.zip
 ```
+
+If you're updating from before v1.3.0, the Notion Kanban database predates the `Worktree Path` property — the extension's commands skip writing it silently on databases that don't have it yet. Add it manually in Notion (`Worktree Path`, type `Text`) to get full worktree tracking on existing projects.
 
 ---
 
@@ -282,11 +332,12 @@ gh release create vX.Y.Z \
 
 This extension pairs with [`spec-kit-preset-sdd-workflow`](https://github.com/fabfdev/spec-kit-preset-sdd-workflow), which replaces Spec Kit's core commands (`speckit.specify`, `speckit.clarify`, `speckit.plan`, `speckit.analyze`, `speckit.tasks`, `speckit.implement`) with an opinionated SDD implementation featuring:
 
-- Sequential feature numbering (`specs/NNN-[slug]/`)
+- Slug-only feature folders (`specs/[slug]/`)
+- A dedicated git worktree per feature (`.worktrees/[slug]`)
 - Mandatory human approval gates
 - Conventional commits
 - Two-commit discipline per task
-- Full roadmap lifecycle tracking
+- Notion Kanban progress tracking
 
 ---
 
