@@ -56,17 +56,35 @@ Show the user the Notion page URL and ask:
 Use the Notion MCP to retrieve the page using the URL or slug from `$ARGUMENTS`.
 
 - Status `Resolved` → inform the user and stop
-- Status `Reported` or `In Progress` → continue to Step 3
+- Status `Reported` → continue to Step 3
+- Status `In Progress` → this debt item already has a worktree. Read the `Worktree Path` property from the page you just fetched. Verify it still exists (`git worktree list --porcelain`, look for that path). If confirmed, `cd` into it and skip Step 3 entirely — go straight to Step 4. If `Worktree Path` is empty or stale, fall back to Step 3, whose idempotency check will locate it by branch name instead.
 
 ---
 
-## Step 3 — Create branch
+## Step 3 — Create worktree
+
+Check idempotency before creating anything:
+
+1. Run `git worktree list --porcelain` and check for an entry whose branch is `refactor/[debt-slug]`. Also check if the local branch already exists (`git branch --list refactor/[debt-slug]`).
+   - If a worktree already exists for this branch: `cd` into it and skip to substep 3.
+   - If the branch exists but has no worktree: `git worktree add .worktrees/refactor-[debt-slug] refactor/[debt-slug]` (no `-b` — attach the existing branch).
+   - If neither exists: proceed with substep 2.
+2. Ensure `.worktrees/` is listed in the project's `.gitignore` (add the line and commit that change on its own if missing), then:
 
 ```bash
-git checkout -b refactor/[debt-slug]
+git worktree add .worktrees/refactor-[debt-slug] -b refactor/[debt-slug]
 ```
 
-Use the Notion MCP to update the debt page `Status` → `In Progress`.
+3. Tell the user:
+
+```
+Worktree created at .worktrees/refactor-[debt-slug]/
+You can continue here, or open a new Claude Code session pointed at that path to work on it in parallel with something else.
+```
+
+Use the Notion MCP to update the debt page:
+- `Status` → `In Progress`
+- `Worktree Path` → `.worktrees/refactor-[debt-slug]` (if this property doesn't exist on the database yet, skip it silently)
 
 ## Step 4 — Load context
 
@@ -99,7 +117,7 @@ Can you validate so I can commit?
 
 ## Step 8 — Commit
 
-After approval:
+After approval, run inside the worktree (`.worktrees/refactor-[debt-slug]/`):
 
 ```bash
 git add [files]
@@ -142,6 +160,7 @@ After the PR is created, use the Notion MCP to update the debt page:
 - **Restricted scope:** only what is described in the Notion debt page
 - **Test gate:** tests passing before presenting
 - **Human gate:** approval before committing
-- **Branch required:** never resolve on main
+- **Worktree required:** always create `.worktrees/refactor-[slug]` with branch `refactor/[slug]`; never plain `git checkout -b` in the current directory, never resolve on main
+- **Idempotent worktree creation:** check for an existing worktree/branch before creating one; never fail on a re-run
 - **Notion updated at every transition:** Reported → In Progress → Resolved
 - **PR URL saved:** always update the Notion page with the PR URL after creation

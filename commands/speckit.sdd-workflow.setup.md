@@ -49,6 +49,7 @@ Use the Notion MCP to create a new database inside `project_page_id` titled **"[
 | `Status` | select | Planned · Specced · Ready · In Progress · In Review · Completed · Reported · Resolved · Abandoned |
 | `Slug` | rich_text | — |
 | `Branch` | rich_text | — |
+| `Worktree Path` | rich_text | — |
 | `Tasks Done` | number | — |
 | `Tasks Total` | number | — |
 | `PR URL` | url | — |

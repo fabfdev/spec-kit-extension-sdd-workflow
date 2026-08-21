@@ -3,8 +3,8 @@ schema_version: "1.0"
 extension:
   id: "sdd-workflow"
   name: "SDD Workflow Extra"
-  version: "1.2.0"
-  description: "Adds product-level PRD, Software Design Document (SDD), Notion Kanban setup, and bug/tech debt workflow commands — the project inception and health management layer missing from spec-kit core. Bugs and tech debt are tracked as Notion pages; no local markdown files for health tracking."
+  version: "1.3.0"
+  description: "Adds product-level PRD, Software Design Document (SDD), Notion Kanban setup, bug/tech debt workflow commands, and dedicated-worktree lifecycle management (list, switch, finish) — the project inception, health management, and parallel-work layer missing from spec-kit core. Bugs and tech debt are tracked as Notion pages; no local markdown files for health tracking."
   author: "Felipe Faustini"
   repository: "https://github.com/faustfelipe/spec-kit-extension-sdd-workflow"
   license: "MIT"
@@ -28,7 +28,19 @@ provides:
 
     - name: "speckit.sdd-workflow.fix-bug"
       file: "commands/speckit.sdd-workflow.fix-bug.md"
-      description: "Register and fix a bug as a Notion page (Type=Bug). Creates bugfix branch, fixes, runs tests, and opens a PR with Notion status tracking throughout."
+      description: "Register and fix a bug as a Notion page (Type=Bug). Creates a dedicated worktree on a bugfix branch, fixes, runs tests, and opens a PR with Notion status tracking throughout."
+
+    - name: "speckit.sdd-workflow.fix-debt"
+      file: "commands/speckit.sdd-workflow.fix-debt.md"
+      description: "Register and resolve technical debt as a Notion page (Type=Tech Debt). Creates a dedicated worktree on a refactor branch, implements the resolution, runs tests, and opens a PR with Notion status tracking throughout."
+
+    - name: "speckit.sdd-workflow.worktrees"
+      file: "commands/speckit.sdd-workflow.worktrees.md"
+      description: "List all active worktrees (features, bugs, tech debt) enriched with their Notion status, and optionally switch into one."
+
+    - name: "speckit.sdd-workflow.finish"
+      file: "commands/speckit.sdd-workflow.finish.md"
+      description: "Close out the current feature/bug/debt worktree: merges its PR (squash + delete branch), removes the worktree, updates Notion, and returns to main."
 
 tags:
   - "sdd"
@@ -36,3 +48,5 @@ tags:
   - "architecture"
   - "bug-tracking"
   - "health"
+  - "tech-debt"
+  - "worktrees"
