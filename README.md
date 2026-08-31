@@ -109,7 +109,7 @@ This means two Claude Code sessions can work on two different things at the same
 
 ```bash
 specify extension add sdd-workflow \
-  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.3.0.zip
+  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.3.1.zip
 ```
 
 ### Recommended: install with the companion preset
@@ -119,11 +119,11 @@ The preset replaces Spec Kit's core feature commands. Together, the preset + ext
 ```bash
 # 1. replace core commands with SDD workflow
 specify preset add sdd-workflow \
-  --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v1.3.0.zip
+  --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v1.3.1.zip
 
 # 2. add inception, health, and worktree lifecycle commands
 specify extension add sdd-workflow \
-  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.3.0.zip
+  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.3.1.zip
 ```
 
 ---

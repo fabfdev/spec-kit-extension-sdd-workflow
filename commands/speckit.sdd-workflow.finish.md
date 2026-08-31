@@ -23,10 +23,10 @@ If the current branch doesn't match any of these prefixes (e.g. you're on `main`
 
 ## Step 2 — Locate the main repo and the worktree
 
-Run `git worktree list --porcelain`.
+Run `git worktree list` (each line is `<path> <sha> [<branch>]`; do not pass `--porcelain` — command wrappers in some setups strip it).
 
-- The first entry listed is always the main worktree — record its path as the main repo root.
-- Find the entry whose branch matches the current one — record its path as the worktree path. If no dedicated worktree exists (legacy work done before this convention), the worktree path is the same as the main repo root — cleanup in Step 5 will just skip the removal.
+- The first line listed is always the main worktree — record its path as the main repo root.
+- Find the line whose `[<branch>]` matches the current branch — record its path as the worktree path. If no dedicated worktree exists (legacy work done before this convention), the worktree path is the same as the main repo root — cleanup in Step 5 will just skip the removal.
 
 ## Step 3 — Verify the PR
 

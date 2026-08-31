@@ -10,11 +10,11 @@ $ARGUMENTS
 
 ## Step 1 — List worktrees
 
-Run `git worktree list --porcelain`.
+Run `git worktree list` (each line is `<path> <sha> [<branch>]`; do not pass `--porcelain` — command wrappers in some setups strip it).
 
-Parse every entry. The first entry is always the main worktree — label it `main`, exclude it from the numbered switch list further below (but still show it as option `0`).
+Parse every line. The first line is always the main worktree — label it `main`, exclude it from the numbered switch list further below (but still show it as option `0`).
 
-For every other entry, derive the type and slug from the branch name:
+For every other line, derive the type and slug from the branch name (the value inside `[...]`):
 - `feature/[slug]` → Type: Feature
 - `bugfix/[slug]` → Type: Bug
 - `refactor/[slug]` → Type: Tech Debt
