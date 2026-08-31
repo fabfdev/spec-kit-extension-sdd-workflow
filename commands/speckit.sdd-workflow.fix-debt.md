@@ -57,7 +57,7 @@ Use the Notion MCP to retrieve the page using the URL or slug from `$ARGUMENTS`.
 
 - Status `Resolved` → inform the user and stop
 - Status `Reported` → continue to Step 3
-- Status `In Progress` → this debt item already has a worktree. Read the `Worktree Path` property from the page you just fetched. Verify it still exists (`git worktree list --porcelain`, look for that path). If confirmed, `cd` into it and skip Step 3 entirely — go straight to Step 4. If `Worktree Path` is empty or stale, fall back to Step 3, whose idempotency check will locate it by branch name instead.
+- Status `In Progress` → this debt item already has a worktree. Read the `Worktree Path` property from the page you just fetched. Verify it still exists: run `git worktree list` (each line is `<path> <sha> [<branch>]`) and look for a line starting with that path. If confirmed, `cd` into it and skip Step 3 entirely — go straight to Step 4. If `Worktree Path` is empty or stale, fall back to Step 3, whose idempotency check will locate it by branch name instead.
 
 ---
 
@@ -65,7 +65,7 @@ Use the Notion MCP to retrieve the page using the URL or slug from `$ARGUMENTS`.
 
 Check idempotency before creating anything:
 
-1. Run `git worktree list --porcelain` and check for an entry whose branch is `refactor/[debt-slug]`. Also check if the local branch already exists (`git branch --list refactor/[debt-slug]`).
+1. Run `git worktree list` (each line is `<path> <sha> [<branch>]`; do not pass `--porcelain` — command wrappers in some setups strip it) and check for a line whose `[<branch>]` is `[refactor/[debt-slug]]`. Also check if the local branch already exists (`git branch --list refactor/[debt-slug]`).
    - If a worktree already exists for this branch: `cd` into it and skip to substep 3.
    - If the branch exists but has no worktree: `git worktree add .worktrees/refactor-[debt-slug] refactor/[debt-slug]` (no `-b` — attach the existing branch).
    - If neither exists: proceed with substep 2.
