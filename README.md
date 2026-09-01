@@ -10,12 +10,13 @@ Designed to work alongside [`spec-kit-preset-sdd-workflow`](https://github.com/f
 
 | Aspect | Spec-kit + preset only | + SDD Workflow Extension |
 |--------|------------------------|--------------------------|
-| Project initialization | Manual | `/speckit.sdd-workflow.setup` scaffolds everything, including the Notion Kanban database |
+| Project initialization | Manual | `/speckit.sdd-workflow.setup` scaffolds everything, including `docs/kanban/` (the local tracking board) |
 | Product context | None | `docs/core/prd.md` — vision, personas, KPIs, business rules |
 | Architecture context | None | `docs/core/sdd.md` — stack, patterns, naming conventions |
 | Feature command intelligence | Generic | All preset commands read `sdd.md` to avoid redundant questions and enforce consistent output |
-| Bug tracking | None | Notion page (`Type = Bug`) + dedicated worktree on `bugfix/[slug]`, fix, tests, PR |
-| Tech debt tracking | None | Notion page (`Type = Tech Debt`) + dedicated worktree on `refactor/[slug]`, resolution, tests, PR |
+| Progress tracking | None | One markdown file per item under `docs/kanban/`, committed with the work; `git log` is the history |
+| Bug tracking | None | `docs/kanban/bug-[slug].md` + dedicated worktree on `bugfix/[slug]`, fix, tests, PR |
+| Tech debt tracking | None | `docs/kanban/debt-[slug].md` + dedicated worktree on `refactor/[slug]`, resolution, tests, PR |
 | Parallel work | Not supported | Every feature/bug/debt gets its own git worktree; `worktrees` and `finish` manage the lifecycle |
 
 ### Why `docs/core/sdd.md` matters
@@ -36,7 +37,7 @@ Without `sdd.md`, the preset commands still work — they just have less context
 ```mermaid
 flowchart TD
     subgraph inception["Project Inception (run once)"]
-        S["/speckit.sdd-workflow.setup\nScaffold docs/ + Notion Kanban DB"]
+        S["/speckit.sdd-workflow.setup\nScaffold docs/ incl. docs/kanban/"]
         S --> PP["/speckit.sdd-workflow.product-prd\ndocs/core/prd.md"]
         PP --> SDD["/speckit.sdd-workflow.sdd\ndocs/core/sdd.md"]
     end
@@ -48,7 +49,7 @@ flowchart TD
         PL --> AN["/speckit.analyze ✦ read-only\nConsistency report"]
         AN --> TA["/speckit.tasks\nspecs/slug/tasks.md + N_task.md"]
         TA --> IM["/speckit.implement × N\ncode commits + tracking commits"]
-        IM --> FIN["/speckit.sdd-workflow.finish\nmerge PR, remove worktree, Notion: Completed"]
+        IM --> FIN["/speckit.sdd-workflow.finish\nmerge PR, remove worktree, status: completed"]
     end
 
     subgraph health["Maintenance"]
@@ -68,13 +69,14 @@ flowchart TD
 
 | Command | Artifact | Description |
 |---------|----------|-------------|
-| `/speckit.sdd-workflow.setup` | Notion Kanban DB, `docs/health/scan.md` | Provisions the Notion Kanban database and scaffolds the local `docs/` layout. **Run once after installing.** |
+| `/speckit.sdd-workflow.setup` | `docs/kanban/README.md`, `docs/health/scan.md` | Scaffolds the local `docs/` layout, including `docs/kanban/` (tracking board — schema + status lifecycle). **Run once after installing.** |
 | `/speckit.sdd-workflow.product-prd` | `docs/core/prd.md` | Creates the product-level PRD: vision, target users, personas, KPIs, user flows, and business rules |
 | `/speckit.sdd-workflow.sdd` | `docs/core/sdd.md` | Creates the Software Design Document: stack, folder structure, data model, naming conventions, test strategy. Collaborative session — agent researches libraries, questions decisions, suggests alternatives |
-| `/speckit.sdd-workflow.fix-bug` | Notion page (`Type=Bug`) | Registers a bug, creates a dedicated worktree on `bugfix/[slug]`, implements the fix, runs tests, opens a PR |
-| `/speckit.sdd-workflow.fix-debt` | Notion page (`Type=Tech Debt`) | Registers tech debt, creates a dedicated worktree on `refactor/[slug]`, implements the resolution, runs tests, opens a PR |
-| `/speckit.sdd-workflow.worktrees` | — (read-only) | Lists every active worktree (features, bugs, debt) enriched with Notion status/priority/tasks, and lets you switch into one |
-| `/speckit.sdd-workflow.finish` | — | Merges the current worktree's PR (squash + delete branch), removes the worktree, updates Notion, returns to `main` |
+| `/speckit.sdd-workflow.fix-bug` | `docs/kanban/bug-[slug].md` | Registers a bug, creates a dedicated worktree on `bugfix/[slug]`, implements the fix, runs tests, opens a PR |
+| `/speckit.sdd-workflow.fix-debt` | `docs/kanban/debt-[slug].md` | Registers tech debt, creates a dedicated worktree on `refactor/[slug]`, implements the resolution, runs tests, opens a PR |
+| `/speckit.sdd-workflow.worktrees` | — (read-only) | Lists every active worktree (features, bugs, debt) enriched with `docs/kanban/` status/priority/tasks, and lets you switch into one |
+| `/speckit.sdd-workflow.finish` | — | Merges the current worktree's PR (squash + delete branch), removes the worktree, updates the `docs/kanban/` entry, returns to `main` |
+| `/speckit.sdd-workflow.import-notion` | `docs/kanban/*.md` | One-time migration: reads a v1.x Notion Kanban board via MCP and writes one file per item. The only command that touches Notion |
 
 ---
 
@@ -91,8 +93,8 @@ your-project/
 
 This means two Claude Code sessions can work on two different things at the same time without one session's `git checkout` stepping on the other's. To work on something, `cd` into its worktree (or point a new Claude Code session at that path) and run the preset/extension commands from there as usual.
 
-- **See what's in progress:** `/speckit.sdd-workflow.worktrees` — lists every worktree with its Notion status, and offers to `cd` you into one.
-- **Wrap one up:** `/speckit.sdd-workflow.finish` — run from inside the worktree you're closing. Merges its PR, deletes the worktree and remote branch, updates Notion, and returns you to `main`.
+- **See what's in progress:** `/speckit.sdd-workflow.worktrees` — lists every worktree with its `docs/kanban/` status, and offers to `cd` you into one.
+- **Wrap one up:** `/speckit.sdd-workflow.finish` — run from inside the worktree you're closing. Merges its PR, deletes the worktree and remote branch, updates the `docs/kanban/` entry, and returns you to `main`.
 
 `/speckit.specify`, `/speckit.sdd-workflow.fix-bug`, and `/speckit.sdd-workflow.fix-debt` create these worktrees for you automatically — you don't need `git worktree` commands directly unless something goes wrong.
 
@@ -109,7 +111,7 @@ This means two Claude Code sessions can work on two different things at the same
 
 ```bash
 specify extension add sdd-workflow \
-  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.3.1.zip
+  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v2.0.0.zip
 ```
 
 ### Recommended: install with the companion preset
@@ -119,11 +121,11 @@ The preset replaces Spec Kit's core feature commands. Together, the preset + ext
 ```bash
 # 1. replace core commands with SDD workflow
 specify preset add sdd-workflow \
-  --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v1.3.1.zip
+  --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v2.0.0.zip
 
 # 2. add inception, health, and worktree lifecycle commands
 specify extension add sdd-workflow \
-  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v1.3.1.zip
+  --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v2.0.0.zip
 ```
 
 ---
@@ -137,9 +139,11 @@ specify extension add sdd-workflow \
 ```
 
 Creates:
-- The Notion Kanban database (properties: Name, Type, Status, Slug, Branch, Worktree Path, Tasks Done, Tasks Total, PR URL, Priority, Notes)
-- `.sdd-notion.json` (gitignored — holds the database ID)
+- `docs/kanban/README.md` — the tracking board: frontmatter schema (name, type, status, slug, branch, worktree, priority, tasks_done, tasks_total, pr, created, updated) and the status lifecycle
 - `docs/health/scan.md`
+- `.gitignore` entry for `.worktrees/`
+
+Work items are added later, one markdown file per item (`docs/kanban/feature-*.md`, `bug-*.md`, `debt-*.md`), by the feature and maintenance commands. They are committed with the work, so `git log docs/kanban/` is the history.
 
 ### Step 2 — Define the product (once per project)
 
@@ -192,7 +196,7 @@ With inception done, run the feature cycle from the preset:
 # — Initialize a new project —
 /speckit.sdd-workflow.setup
 
-  Creates: Notion Kanban DB, .sdd-notion.json, docs/health/scan.md
+  Creates: docs/kanban/README.md (schema + lifecycle), docs/health/scan.md
 
 # — Define the product —
 /speckit.sdd-workflow.product-prd
@@ -227,7 +231,7 @@ With inception done, run the feature cycle from the preset:
 /speckit.sdd-workflow.fix-bug Dashboard crashes when date range spans multiple years
 
   Agent:
-    1. Creates a Notion page (Type=Bug): impact, location, reproduction steps, root cause
+    1. Creates docs/kanban/bug-dashboard-date-crash.md: frontmatter (status: reported) + location, current/expected behavior, repro, suggested fix
     2. Asks: fix now or defer?
     3. Fix now → creates worktree .worktrees/bugfix-dashboard-date-crash on branch bugfix/dashboard-date-crash
     4. Reads sdd.md to use correct conventions
@@ -235,14 +239,14 @@ With inception done, run the feature cycle from the preset:
     6. Presents for validation
     7. After approval:
          commit: "fix: handle multi-year date range in dashboard"
-         Notion page → Resolved
+         docs/kanban/bug-dashboard-date-crash.md → status: resolved, + ## Resolution
          opens PR
 
 # — Check what's in progress —
 /speckit.sdd-workflow.worktrees
 
-  1. .worktrees/usage-dashboard             — feature/usage-dashboard            — In Progress (2/5 tasks) — Priority: Medium
-  2. .worktrees/bugfix-dashboard-date-crash — bugfix/dashboard-date-crash        — Resolved (PR open)     — Priority: High
+  1. .worktrees/usage-dashboard             — feature/usage-dashboard            — in-progress (2/5 tasks) — priority: medium
+  2. .worktrees/bugfix-dashboard-date-crash — bugfix/dashboard-date-crash        — resolved (PR open)      — priority: high
   Switch to one? (number, or "no")
 
 # — Wrap up the bug once its PR is merged —
@@ -273,9 +277,7 @@ specify preset remove sdd-workflow
 ## File structure generated
 
 ```
-.sdd-notion.json      ← gitignored, holds the Notion database ID
-
-.worktrees/
+.worktrees/            ← gitignored
   usage-dashboard/               ← feature/usage-dashboard
   bugfix-dashboard-date-crash/   ← bugfix/dashboard-date-crash
   refactor-legacy-auth/          ← refactor/legacy-auth
@@ -286,6 +288,11 @@ docs/
     sdd.md              ← architecture document (most critical file)
   health/
     scan.md             ← guide: when and how to run health scans
+  kanban/
+    README.md           ← frontmatter schema + status lifecycle
+    feature-usage-dashboard.md      ← one file per work item: frontmatter + narrative
+    bug-dashboard-date-crash.md
+    debt-legacy-auth.md
 
 specs/                  ← created by the preset during feature cycles
   [feature]/
@@ -296,7 +303,7 @@ specs/                  ← created by the preset during feature cycles
     ...
 ```
 
-Bugs and tech debt live entirely as Notion pages (`Type = Bug` / `Type = Tech Debt`) — no local markdown files are generated for them.
+Every work item — feature, bug, or tech debt — is one file under `docs/kanban/`, committed alongside the work. `git log docs/kanban/<file>` is its full history.
 
 ---
 
@@ -308,7 +315,17 @@ specify extension add sdd-workflow \
   --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/vX.Y.Z.zip
 ```
 
-If you're updating from before v1.3.0, the Notion Kanban database predates the `Worktree Path` property — the extension's commands skip writing it silently on databases that don't have it yet. Add it manually in Notion (`Worktree Path`, type `Text`) to get full worktree tracking on existing projects.
+### Migrating from v1.x (Notion)
+
+v1.x tracked features, bugs, and tech debt in a Notion Kanban database. **v2 removes Notion entirely** — everything is now local, one markdown file per item under `docs/kanban/`.
+
+To migrate an existing v1.x project:
+
+1. Install v2 of the extension (and the companion preset).
+2. Run `/speckit.sdd-workflow.import-notion` once. It reads your existing Notion board via the Notion MCP and writes one `docs/kanban/<type>-<slug>.md` per item, mapping properties to frontmatter and the page body to the standard sections.
+3. Delete `.sdd-notion.json` and archive the Notion database — nothing uses them anymore.
+
+`import-notion` is the only command in v2 that touches Notion.
 
 ---
 
@@ -337,7 +354,7 @@ This extension pairs with [`spec-kit-preset-sdd-workflow`](https://github.com/fa
 - Mandatory human approval gates
 - Conventional commits
 - Two-commit discipline per task
-- Notion Kanban progress tracking
+- Local `docs/kanban/` progress tracking (one markdown file per item)
 
 ---
 
