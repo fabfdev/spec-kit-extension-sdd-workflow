@@ -1,5 +1,5 @@
 ---
-description: Register and resolve technical debt. Creates a Notion page (Type=Tech Debt) as the primary document, creates a refactor branch, implements the resolution, runs tests, and opens a PR. The user validates before any commit.
+description: Register and resolve technical debt. Creates docs/kanban/debt-[slug].md as the primary document, creates a refactor branch, implements the resolution, runs tests, and opens a PR. The user validates before any commit.
 ---
 
 ## User Input
@@ -12,24 +12,26 @@ $ARGUMENTS
 
 ## Scenario A — New technical debt (reported in chat)
 
-### Step 1 — Register the debt in Notion
+### Step 1 — Register the debt in docs/kanban/
 
 Derive a short slug from the debt title (lowercase, hyphenated, max 5 words, e.g. `legacy-auth-middleware`).
 
-Load `.sdd-notion.json` from the project root and read `database_id`.
+Create `docs/kanban/` if it does not exist, then write `docs/kanban/debt-[debt-slug].md`:
 
-Use the Notion MCP to create a new page in the database with these properties:
+```markdown
+---
+name: [Debt Title]
+type: debt
+status: reported
+slug: [debt-slug]
+branch: refactor/[debt-slug]
+worktree:
+priority: [low|medium|high]
+pr:
+created: [YYYY-MM-DD]
+updated: [YYYY-MM-DD]
+---
 
-- **Name**: [Debt Title]
-- **Type**: Tech Debt
-- **Status**: Reported
-- **Slug**: [debt-slug]
-- **Branch**: refactor/[debt-slug]
-- **Priority**: ask the user if not clear from context (Low / Medium / High)
-
-Then append the following content blocks to the newly created Notion page:
-
-```
 ## Problem
 [What is wrong or accumulated]
 
@@ -43,21 +45,23 @@ Then append the following content blocks to the newly created Notion page:
 [How to confirm it is resolved]
 ```
 
+Ask the user for `priority` if it is not clear from context. Use today's date for `created` and `updated`.
+
 ### Step 2 — Ask: resolve now or defer?
 
-Show the user the Notion page URL and ask:
+Show the user the path `docs/kanban/debt-[debt-slug].md` and ask:
 - **Resolve now:** continue to Step 3
-- **Defer:** stop here. The debt is registered in Notion with Status `Reported`.
+- **Defer:** commit the file (`git add docs/kanban/debt-[debt-slug].md && git commit -m "docs: register debt [debt-slug]"`) and stop here. The debt is registered with `status: reported`.
 
 ---
 
-## Scenario B — Already registered debt (Notion URL or slug in $ARGUMENTS)
+## Scenario B — Already registered debt (slug in $ARGUMENTS)
 
-Use the Notion MCP to retrieve the page using the URL or slug from `$ARGUMENTS`.
+Read `docs/kanban/debt-[debt-slug].md` (derive the slug from `$ARGUMENTS` — it may be a bare slug or a path).
 
-- Status `Resolved` → inform the user and stop
-- Status `Reported` → continue to Step 3
-- Status `In Progress` → this debt item already has a worktree. Read the `Worktree Path` property from the page you just fetched. Verify it still exists: run `git worktree list` (each line is `<path> <sha> [<branch>]`) and look for a line starting with that path. If confirmed, `cd` into it and skip Step 3 entirely — go straight to Step 4. If `Worktree Path` is empty or stale, fall back to Step 3, whose idempotency check will locate it by branch name instead.
+- `status: resolved` → inform the user and stop
+- `status: reported` → continue to Step 3
+- `status: in-progress` → this debt item already has a worktree. Read the `worktree:` field from the frontmatter. Verify it still exists: run `git worktree list` (each line is `<path> <sha> [<branch>]`) and look for a line starting with that path. If confirmed, `cd` into it and skip Step 3 entirely — go straight to Step 4. If `worktree:` is empty or stale, fall back to Step 3, whose idempotency check will locate it by branch name instead.
 
 ---
 
@@ -82,13 +86,16 @@ Worktree created at .worktrees/refactor-[debt-slug]/
 You can continue here, or open a new Claude Code session pointed at that path to work on it in parallel with something else.
 ```
 
-Use the Notion MCP to update the debt page:
-- `Status` → `In Progress`
-- `Worktree Path` → `.worktrees/refactor-[debt-slug]` (if this property doesn't exist on the database yet, skip it silently)
+In `docs/kanban/debt-[debt-slug].md` frontmatter, set:
+- `status: in-progress`
+- `worktree: .worktrees/refactor-[debt-slug]`
+- `updated:` today's date
+
+Commit it inside the worktree: `git add docs/kanban/debt-[debt-slug].md && git commit -m "docs: start debt [debt-slug]"`.
 
 ## Step 4 — Load context
 
-1. Retrieve the Notion debt page content (Problem, Location, Proposed solution, Acceptance criteria)
+1. Read `docs/kanban/debt-[debt-slug].md` (Problem, Location, Proposed solution, Acceptance criteria)
 2. Open the files referenced under "Location"
 3. Read `docs/core/sdd.md` — architecture and conventions (if it exists)
 
@@ -124,18 +131,19 @@ git add [files]
 git commit -m "refactor: [description]"
 ```
 
-## Step 9 — Update Notion page
+## Step 9 — Update the kanban entry
 
-Use the Notion MCP to update the debt page:
-- `Status` → `Resolved`
+In `docs/kanban/debt-[debt-slug].md` frontmatter, set `status: resolved` and `updated:` to today's date.
 
-Append to the page content:
+Append to the file body:
 
 ```
 ## Resolution
 Resolved on: YYYY-MM-DD
 [Brief description of what was addressed]
 ```
+
+Commit it: `git add docs/kanban/debt-[debt-slug].md && git commit -m "docs: resolve debt [debt-slug]"`.
 
 ## Step 10 — Create PR
 
@@ -145,22 +153,21 @@ gh pr create \
   --body "## Resolution
 [What was addressed]
 
-## Notion
-[Debt page URL]
+## Tracking
+docs/kanban/debt-[debt-slug].md
 
 ## How to test
 [Steps to verify]"
 ```
 
-After the PR is created, use the Notion MCP to update the debt page:
-- `PR URL` → [URL returned by gh pr create]
+After the PR is created, in `docs/kanban/debt-[debt-slug].md` frontmatter set `pr:` to the URL returned by `gh pr create`, then commit (`git add docs/kanban/debt-[debt-slug].md && git commit -m "docs: link PR for debt [debt-slug]"`).
 
 ## Constraints
 
-- **Restricted scope:** only what is described in the Notion debt page
+- **Restricted scope:** only what is described in `docs/kanban/debt-[slug].md`
 - **Test gate:** tests passing before presenting
 - **Human gate:** approval before committing
 - **Worktree required:** always create `.worktrees/refactor-[slug]` with branch `refactor/[slug]`; never plain `git checkout -b` in the current directory, never resolve on main
 - **Idempotent worktree creation:** check for an existing worktree/branch before creating one; never fail on a re-run
-- **Notion updated at every transition:** Reported → In Progress → Resolved
-- **PR URL saved:** always update the Notion page with the PR URL after creation
+- **Kanban updated at every transition:** `reported → in-progress → resolved`
+- **PR URL saved:** always set `pr:` in the kanban entry after creating the PR

@@ -7,8 +7,9 @@ ships `commands/*.md` — prompt templates that spec-kit installs into a *target
 project as slash commands (`/speckit.sdd-workflow.setup`,
 `/speckit.sdd-workflow.fix-bug`, …). This is the layer spec-kit core lacks:
 project inception (product PRD, SDD), health management (bugs, tech debt), and
-parallel-work lifecycle (dedicated worktrees: list, switch, finish). Bugs and
-tech debt are tracked as Notion pages — no local markdown for health tracking.
+parallel-work lifecycle (dedicated worktrees: list, switch, finish). Since
+v2.0.0 all tracking is local: one markdown file per work item under
+`docs/kanban/`, committed with the work.
 
 - `extension.yml` — manifest: command list, plus `version`.
 - `commands/*.md` — the templates: numbered steps, fenced `bash` blocks with
@@ -46,11 +47,21 @@ in sync.
   - `gh ... --json` (used by `finish` to read PR state), `gh pr merge`,
     `gh pr create`, `git add/commit`, `git worktree add` are all safe — rtk
     passes them through or emits a faithful confirmation line.
-- **Notion is out of any wrapper's reach.** MCP tool calls (`mcp__notion__*`)
-  are never compacted — they are the bulk of these workflows. When a step
-  touches Notion, name the exact page (by `Slug`) and the exact properties it
-  needs; never "fetch the whole database" or dump a full page when a few
-  properties will do.
+- **Tracking is local (since v2.0.0).** Every work item is
+  `docs/kanban/<type>-<slug>.md` (`type` ∈ `feature|bug|debt`): YAML frontmatter
+  for structured fields (`status`, `slug`, `branch`, `worktree`, `priority`,
+  `tasks_done`, `tasks_total`, `pr`, `created`, `updated`), markdown body for the
+  narrative. Status transitions and counters are frontmatter edits, committed
+  alongside the work — `git log docs/kanban/` is the audit trail. The canonical
+  schema is the content `setup` writes into `docs/kanban/README.md`; every other
+  template must stay consistent with it. Feature files: preset commands create
+  `docs/kanban/` on demand. Bug/debt files: `fix-bug` / `fix-debt`.
+- **`import-notion` is the one exception.** It is a transitional command that
+  reads a v1.x Notion board via `mcp__notion__*` once and writes `docs/kanban/`.
+  No other template may reference Notion, `.sdd-notion.json`, or any MCP call.
+- **`finish` writes on `main`.** The in-flight kanban file is carried to `main`
+  by the merged PR; the closing transition (`status: completed`, clear
+  `worktree:`) is a fresh commit on `main` that `finish` pushes.
 
 ## Versioning
 

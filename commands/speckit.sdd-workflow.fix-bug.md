@@ -1,5 +1,5 @@
 ---
-description: Register and fix a bug. Creates a Notion page (Type=Bug) as the primary document, creates a bugfix branch, fixes, runs tests, and opens a PR. The user validates before any commit.
+description: Register and fix a bug. Creates docs/kanban/bug-[slug].md as the primary document, creates a bugfix branch, fixes, runs tests, and opens a PR. The user validates before any commit.
 ---
 
 ## User Input
@@ -12,24 +12,26 @@ $ARGUMENTS
 
 ## Scenario A — New bug (reported in chat)
 
-### Step 1 — Register the bug in Notion
+### Step 1 — Register the bug in docs/kanban/
 
 Derive a short slug from the bug title (lowercase, hyphenated, max 5 words, e.g. `null-pointer-on-login`).
 
-Load `.sdd-notion.json` from the project root and read `database_id`.
+Create `docs/kanban/` if it does not exist, then write `docs/kanban/bug-[bug-slug].md`:
 
-Use the Notion MCP to create a new page in the database with these properties:
+```markdown
+---
+name: [Bug Title]
+type: bug
+status: reported
+slug: [bug-slug]
+branch: bugfix/[bug-slug]
+worktree:
+priority: [low|medium|high]
+pr:
+created: [YYYY-MM-DD]
+updated: [YYYY-MM-DD]
+---
 
-- **Name**: [Bug Title]
-- **Type**: Bug
-- **Status**: Reported
-- **Slug**: [bug-slug]
-- **Branch**: bugfix/[bug-slug]
-- **Priority**: ask the user if not clear from context (Low / Medium / High)
-
-Then append the following content blocks to the newly created Notion page:
-
-```
 ## Location
 [File and line — fill in what is known now; update later if needed]
 
@@ -46,21 +48,23 @@ Then append the following content blocks to the newly created Notion page:
 [How to fix — or "Unknown, under investigation"]
 ```
 
+Ask the user for `priority` if it is not clear from context. Use today's date for `created` and `updated`.
+
 ### Step 2 — Ask: fix now or defer?
 
-Show the user the Notion page URL and ask:
+Show the user the path `docs/kanban/bug-[bug-slug].md` and ask:
 - **Fix now:** continue to Step 3
-- **Defer:** stop here. The bug is registered in Notion with Status `Reported`.
+- **Defer:** commit the file (`git add docs/kanban/bug-[bug-slug].md && git commit -m "docs: register bug [bug-slug]"`) and stop here. The bug is registered with `status: reported`.
 
 ---
 
-## Scenario B — Already registered bug (Notion URL or slug in $ARGUMENTS)
+## Scenario B — Already registered bug (slug in $ARGUMENTS)
 
-Use the Notion MCP to retrieve the page using the URL or slug from `$ARGUMENTS`.
+Read `docs/kanban/bug-[bug-slug].md` (derive the slug from `$ARGUMENTS` — it may be a bare slug or a path).
 
-- Status `Resolved` → inform the user and stop
-- Status `Reported` → continue to Step 3
-- Status `In Progress` → this bug already has a worktree. Read the `Worktree Path` property from the page you just fetched. Verify it still exists: run `git worktree list` (each line is `<path> <sha> [<branch>]`) and look for a line starting with that path. If confirmed, `cd` into it and skip Step 3 entirely — go straight to Step 4. If `Worktree Path` is empty or stale, fall back to Step 3, whose idempotency check will locate it by branch name instead.
+- `status: resolved` → inform the user and stop
+- `status: reported` → continue to Step 3
+- `status: in-progress` → this bug already has a worktree. Read the `worktree:` field from the frontmatter. Verify it still exists: run `git worktree list` (each line is `<path> <sha> [<branch>]`) and look for a line starting with that path. If confirmed, `cd` into it and skip Step 3 entirely — go straight to Step 4. If `worktree:` is empty or stale, fall back to Step 3, whose idempotency check will locate it by branch name instead.
 
 ---
 
@@ -85,13 +89,16 @@ Worktree created at .worktrees/bugfix-[bug-slug]/
 You can continue here, or open a new Claude Code session pointed at that path to work on it in parallel with something else.
 ```
 
-Use the Notion MCP to update the bug page:
-- `Status` → `In Progress`
-- `Worktree Path` → `.worktrees/bugfix-[bug-slug]` (if this property doesn't exist on the database yet, skip it silently)
+In `docs/kanban/bug-[bug-slug].md` frontmatter, set:
+- `status: in-progress`
+- `worktree: .worktrees/bugfix-[bug-slug]`
+- `updated:` today's date
+
+Commit it inside the worktree: `git add docs/kanban/bug-[bug-slug].md && git commit -m "docs: start bug [bug-slug]"`.
 
 ## Step 4 — Load context
 
-1. Retrieve the Notion bug page content (Location, Current behavior, Expected behavior, Steps to reproduce, Suggested fix)
+1. Read `docs/kanban/bug-[bug-slug].md` (Location, Current behavior, Expected behavior, Steps to reproduce, Suggested fix)
 2. Open the files referenced under "Location"
 3. Read `docs/core/sdd.md` — architecture and conventions (if it exists)
 
@@ -127,18 +134,19 @@ git add [files]
 git commit -m "fix: [description]"
 ```
 
-## Step 9 — Update Notion page
+## Step 9 — Update the kanban entry
 
-Use the Notion MCP to update the bug page:
-- `Status` → `Resolved`
+In `docs/kanban/bug-[bug-slug].md` frontmatter, set `status: resolved` and `updated:` to today's date.
 
-Append to the page content:
+Append to the file body:
 
 ```
 ## Resolution
 Resolved on: YYYY-MM-DD
 [Brief description of what was changed]
 ```
+
+Commit it: `git add docs/kanban/bug-[bug-slug].md && git commit -m "docs: resolve bug [bug-slug]"`.
 
 ## Step 10 — Create PR
 
@@ -148,22 +156,21 @@ gh pr create \
   --body "## Fix
 [What was fixed]
 
-## Notion
-[Bug page URL]
+## Tracking
+docs/kanban/bug-[bug-slug].md
 
 ## How to test
 [Steps to verify]"
 ```
 
-After the PR is created, use the Notion MCP to update the bug page:
-- `PR URL` → [URL returned by gh pr create]
+After the PR is created, in `docs/kanban/bug-[bug-slug].md` frontmatter set `pr:` to the URL returned by `gh pr create`, then commit (`git add docs/kanban/bug-[bug-slug].md && git commit -m "docs: link PR for bug [bug-slug]"`).
 
 ## Constraints
 
-- **Restricted scope:** only what is described in the Notion bug page
+- **Restricted scope:** only what is described in `docs/kanban/bug-[slug].md`
 - **Test gate:** tests passing before presenting
 - **Human gate:** approval before committing
 - **Worktree required:** always create `.worktrees/bugfix-[slug]` with branch `bugfix/[slug]`; never plain `git checkout -b` in the current directory, never fix on main
 - **Idempotent worktree creation:** check for an existing worktree/branch before creating one; never fail on a re-run
-- **Notion updated at every transition:** Reported → In Progress → Resolved
-- **PR URL saved:** always update the Notion page with the PR URL after creation
+- **Kanban updated at every transition:** `reported → in-progress → resolved`
+- **PR URL saved:** always set `pr:` in the kanban entry after creating the PR

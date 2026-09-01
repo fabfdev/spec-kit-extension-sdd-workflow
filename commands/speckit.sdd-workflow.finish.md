@@ -1,5 +1,5 @@
 ---
-description: Close out the current feature, bug, or tech debt worktree. Merges its PR, removes the worktree, returns to main, and updates Notion. Run this from inside the worktree you want to finish.
+description: Close out the current feature, bug, or tech debt worktree. Merges its PR, removes the worktree, returns to main, and updates the kanban entry. Run this from inside the worktree you want to finish.
 ---
 
 ## User Input
@@ -14,10 +14,10 @@ Determine the current branch: `git branch --show-current`.
 
 If `$ARGUMENTS` was given instead (a slug or branch name), use that. Otherwise infer from the current branch.
 
-Parse the prefix to determine the artifact type:
-- `feature/[slug]` → Type: Feature
-- `bugfix/[slug]` → Type: Bug
-- `refactor/[slug]` → Type: Tech Debt
+Parse the prefix to determine the artifact type and its kanban file:
+- `feature/[slug]` → type `feature` → `docs/kanban/feature-[slug].md`
+- `bugfix/[slug]` → type `bug` → `docs/kanban/bug-[slug].md`
+- `refactor/[slug]` → type `debt` → `docs/kanban/debt-[slug].md`
 
 If the current branch doesn't match any of these prefixes (e.g. you're on `main`), ask the user which feature/bug/debt slug to finish.
 
@@ -57,15 +57,7 @@ After approval:
 gh pr merge [number] --squash --delete-branch
 ```
 
-## Step 5 — Update Notion
-
-Load `.sdd-notion.json` and query the database for the page where `Slug` = `[slug]`.
-
-- **Type = Feature** and `Status` is not already `Completed` → update `Status` → `Completed`.
-- **Type = Bug or Tech Debt** → already `Resolved` from `/speckit.sdd-workflow.fix-bug` or `/speckit.sdd-workflow.fix-debt`. No status change.
-- Clear the `Worktree Path` property (set it empty) — the worktree is about to be removed. Skip silently if the property doesn't exist.
-
-## Step 6 — Remove the worktree and return to main
+## Step 5 — Remove the worktree and return to main
 
 `cd` into the main repo root (from Step 2) — you cannot remove a worktree while it's your current directory.
 
@@ -86,6 +78,22 @@ git checkout main
 git pull
 ```
 
+## Step 6 — Update the kanban entry (on main)
+
+The merged PR already carried `docs/kanban/[type]-[slug].md` onto `main` with its
+in-flight status. Apply the closing transition here and push it:
+
+- **Type = feature** and `status` is not already `completed` → set `status: completed`.
+- **Type = bug or debt** → already `resolved` from `/speckit.sdd-workflow.fix-bug` or `/speckit.sdd-workflow.fix-debt`. No status change.
+- Clear the `worktree:` field (set it empty) — the worktree has been removed.
+- Bump `updated:` to today's date.
+
+```bash
+git add docs/kanban/[type]-[slug].md
+git commit -m "docs: finish [slug]"
+git push
+```
+
 ## Step 7 — Report
 
 ```
@@ -93,7 +101,7 @@ git pull
 
 PR #[number] merged (squash) — remote branch deleted.
 Worktree .worktrees/[slug] removed.
-Notion: [Status update, or "already Resolved — unchanged"].
+Kanban: docs/kanban/[type]-[slug].md — [status: completed, or "already resolved — unchanged"].
 
 Back on main, up to date.
 ```
@@ -104,4 +112,4 @@ Back on main, up to date.
 - **Never force-remove a worktree** with uncommitted changes — stop and ask instead
 - **Works for any of the three branch types:** `feature/*`, `bugfix/*`, `refactor/*`
 - **No PR, no merge:** if no PR exists for the branch, stop and point to the right command to create one
-- **Notion status only advances for features:** bug/debt pages are already `Resolved` before this command runs
+- **Kanban status only advances for features:** bug/debt entries are already `resolved` before this command runs; always clear `worktree:` and push the change to `main`
