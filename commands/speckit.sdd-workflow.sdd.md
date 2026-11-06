@@ -14,8 +14,7 @@ $ARGUMENTS
 
 ## Step 0 — New or existing project?
 
-Ask the user:
-> "Is this a **new project** (no code yet) or an **existing project** (code already exists)?"
+Infer whether code already exists from repository files; ask only when unclear.
 
 - If **new** → proceed to Step 1.
 - If **existing** → execute Step 0.1 before continuing.
@@ -35,10 +34,7 @@ Read the files that reveal architectural contracts without reading implementatio
 **Layer 3 — Integrations**
 Identify all contact points with external systems: third-party APIs, private bundles, SDKs, databases, queues. For each, document only the surface (what the project calls/receives), not the internals.
 
-After the 3 layers, present a summary of what you understood to the user for validation before continuing. Explicitly ask:
-> "Does this reflect the project correctly? Is there anything I missed or misunderstood?"
-
-Once validated, continue to Step 1. Skip any questions in Steps 1.5 and 2 that were already answered by the reading — only ask for what is still unknown.
+After the 3 layers, present a concise factual summary and ask only unresolved decisions. Continue to Step 1. Skip any questions in Steps 1.5 and 2 that were already answered by the reading — only ask for what is still unknown.
 
 ## Step 1 — Read the product PRD
 
@@ -52,7 +48,7 @@ If `docs/core/prd.md` does not exist, ask the user to run `/speckit.sdd-workflow
 
 ## Step 1.5 — Collect project context (required)
 
-Ask the user:
+Read known values from project manifests/CI/product docs; ask only missing decisions:
 - **Project type:** web app, REST API, mobile app, library, CLI, or other
 - **Tech stack:** language, framework, runtime, database
 - **Testing strategy:**
@@ -65,7 +61,7 @@ This block (the `## Contexto do Projeto` section) is the anchor read by all othe
 
 ## Step 2 — Collect architectural vision
 
-Ask the user:
+For remaining architecture decisions, ask in grouped independent rounds:
 - **Intended stack:** Which technologies do you have in mind? (language, framework, database, hosting)
 - **Structure:** Any project structure in mind? (monorepo, monolith, microservices, etc.)
 - **Integrations:** Which external services will be used? (auth, storage, payments, etc.)
@@ -73,7 +69,7 @@ Ask the user:
 
 ## Step 3 — Research and validate
 
-For each technology or library mentioned or considered:
+For a new or uncertain technology/API decision (reuse previously verified context otherwise):
 - Search current documentation to verify stable versions, current API, and recommended patterns
 - Look for real projects with a similar stack to reference code organization patterns
 - Identify known trade-offs or breaking changes that may affect decisions
@@ -175,11 +171,11 @@ Structure:
 
 ## Step 6 — Present for approval
 
-Show the complete draft and wait for explicit approval. Do not save anything before this.
+Save a reviewable draft and present its decisions/diff for approval. Record actual user approval and date; persist answers immediately.
 
 ## Step 7 — Save
 
-After approval, save to `docs/core/sdd.md`.
+Save to `docs/core/sdd.md`; after approval commit this document with `docs:`.
 
 ## Step 8 — Next step
 
@@ -191,6 +187,6 @@ Inform the user that the project is ready to start the feature SDD cycle via `/s
 - **Read the PRD first** — architecture serves the product, not the other way around
 - **Research before recommending** — never suggest libraries without checking current docs
 - **Question actively** — non-obvious trade-offs must be surfaced
-- **Present before saving** — explicit approval required
+- **Decision milestone** — save drafts freely; approval covers architectural decisions
 - **Specific versions** — the SDD must have concrete versions for main dependencies
 - **Save to:** `docs/core/sdd.md`

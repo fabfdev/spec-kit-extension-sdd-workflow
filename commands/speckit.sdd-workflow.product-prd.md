@@ -14,7 +14,7 @@ $ARGUMENTS
 
 ## Step 1 — Clarifying questions
 
-Ask the user the following before drafting anything:
+Inspect existing product documents first; ask only unresolved decisions from these topics:
 
 - **Vision and problem:** What problem does the product solve? For whom? Why now?
 - **Personas:** Who are the main users? What are their needs and pain points?
@@ -24,7 +24,7 @@ Ask the user the following before drafting anything:
 - **Roadmap:** What is the MVP scope? What is deferred to future versions?
 - **Out of scope:** What explicitly does NOT belong to this product?
 
-**Do not skip this step** — the questions capture critical scope constraints.
+Group independent questions. Persist answers immediately; skip topics already settled in project documents.
 
 ## Step 2 — Draft the product PRD
 
@@ -135,11 +135,11 @@ Structure:
 
 ## Step 3 — Present for approval
 
-Show the complete draft to the user and wait for explicit approval. Do not save anything before this.
+Save a reviewable draft, show it or its relevant diff, and wait for scope approval. Record the approval date and the actual user words.
 
 ## Step 4 — Save
 
-After approval, save to `docs/core/prd.md`.
+Save to `docs/core/prd.md`; after approval commit this document with `docs:`.
 
 ## Step 5 — Next step
 
@@ -147,7 +147,7 @@ Inform the user that the next step is `/speckit.sdd-workflow.sdd` to define the 
 
 ## Constraints
 
-- **Questions first** — never draft without asking all questions
-- **Present before saving** — explicit approval required
+- **Decisions first** — ask only unresolved product decisions
+- **Scope milestone** — save drafts freely; record only actual approval
 - **Focus on WHAT and WHY** — no technical implementation details
 - **Save to:** `docs/core/prd.md`

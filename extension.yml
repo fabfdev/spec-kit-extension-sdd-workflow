@@ -3,20 +3,20 @@ schema_version: "1.0"
 extension:
   id: "sdd-workflow"
   name: "SDD Workflow Extra"
-  version: "2.0.0"
-  description: "Adds product-level PRD, Software Design Document (SDD), local Kanban setup (docs/kanban/), bug/tech debt workflow commands, and dedicated-worktree lifecycle management (list, switch, finish) — the project inception, health management, and parallel-work layer missing from spec-kit core. Every work item is one markdown file under docs/kanban/, committed with the work; git log is the history. No external services."
+  version: "3.0.0"
+  description: "Adaptive SDD workflow with milestone approvals, consolidated tasks, incremental analysis, deterministic local checks, atomic commits and independent final review."
   author: "Felipe Faustini"
-  repository: "https://github.com/faustfelipe/spec-kit-extension-sdd-workflow"
+  repository: "https://github.com/fabfdev/spec-kit-extension-sdd-workflow"
   license: "MIT"
 
 requires:
-  speckit_version: ">=0.1.0"
+  speckit_version: ">=0.9.0"
 
 provides:
   commands:
     - name: "speckit.sdd-workflow.setup"
       file: "commands/speckit.sdd-workflow.setup.md"
-      description: "Initialize the SDD workflow: creates the local docs/ scaffold, including docs/kanban/ (the tracking board — schema + status lifecycle) and docs/health/scan.md. Run once per project."
+      description: "Initialize the SDD workflow: creates the local docs/ scaffold, including docs/kanban/ (the tracking board — schema + status lifecycle) and docs/health/scan.md. Rerun safely to fill missing scaffold or migrate schema."
 
     - name: "speckit.sdd-workflow.product-prd"
       file: "commands/speckit.sdd-workflow.product-prd.md"
@@ -40,7 +40,7 @@ provides:
 
     - name: "speckit.sdd-workflow.finish"
       file: "commands/speckit.sdd-workflow.finish.md"
-      description: "Close out the current feature/bug/debt worktree: merges its PR (squash + delete branch), removes the worktree, updates the docs/kanban/ entry, and returns to main."
+      description: "Close out the current feature/bug/debt worktree: confirms merge, reconciles tracking on the default branch, and safely removes the clean worktree."
 
     - name: "speckit.sdd-workflow.import-notion"
       file: "commands/speckit.sdd-workflow.import-notion.md"

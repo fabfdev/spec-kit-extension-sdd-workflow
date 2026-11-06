@@ -1,5 +1,5 @@
 ---
-description: List all active worktrees for this project (features, bugs, tech debt), enriched with their kanban status, and optionally switch into one.
+description: List active worktrees with their live local tracking status and optionally navigate.
 ---
 
 ## User Input
@@ -8,56 +8,30 @@ description: List all active worktrees for this project (features, bugs, tech de
 $ARGUMENTS
 ```
 
-## Step 1 — List worktrees
+## Step 1 — Load the execution contract
 
-Run `git worktree list` (each line is `<path> <sha> [<branch>]`; do not pass `--porcelain` — command wrappers in some setups strip it).
+Resolve `.specify/extensions/sdd-workflow/` in this checkout or the primary checkout
+from `git worktree list`. Read `references/workflow.md` there (once per session;
+reload after compaction/update). Use its `scripts/sdd.py` with --root pointing to
+the active worktree. Read applicable project rules and phase-relevant context.
 
-Parse every line. The first line is always the main worktree — label it `main`, exclude it from the numbered switch list further below (but still show it as option `0`).
+## Step 2 — Enumerate
 
-For every other line, derive the type and slug from the branch name (the value inside `[...]`), and the kanban file:
-- `feature/[slug]` → type `feature` → `docs/kanban/feature-[slug].md`
-- `bugfix/[slug]` → type `bug` → `docs/kanban/bug-[slug].md`
-- `refactor/[slug]` → type `debt` → `docs/kanban/debt-[slug].md`
+Run `git worktree list` using its default output. Match complete branch suffixes
+rather than splitting paths on spaces. Exclude the primary checkout from the
+active-work list. For each worktree, search its own `docs/kanban/` for a record
+whose branch matches; use the primary checkout's copy only when the live record
+is absent. Show worktree, branch, name/type, status, priority and task counts.
+A missing/unreadable record does not prevent listing.
 
-If there are no entries besides `main`, skip straight to Step 4 and report that there's nothing to list.
+## Step 3 — Navigate if requested
 
-## Step 2 — Enrich from docs/kanban/
-
-For each worktree found in Step 1, read its kanban file (from the current checkout — the file may only exist on that worktree's branch, so read it at `[worktree-path]/docs/kanban/[type]-[slug].md` if it is not on `main`). Pull `status`, `priority`, and — for type `feature` only — `tasks_done` / `tasks_total` from the frontmatter.
-
-If the kanban file does not exist for an entry, skip enrichment for it and show git data only — never block the listing on a missing file.
-
-## Step 3 — Present the list
-
-```
-Active worktrees:
-
-0. main (this repo's primary checkout)
-1. .worktrees/user-auth       — feature/user-auth        — in-progress (2/4 tasks) — priority: high
-2. .worktrees/bugfix-null-ptr — bugfix/null-ptr-on-login — in-progress             — priority: medium
-
-Switch to one? (number, or "no")
-```
-
-If a worktree has no kanban file, show it with just path and branch (no status/priority columns).
-
-## Step 4 — Navigate
-
-Wait for the user's answer.
-
-- **A number:** `cd` into that worktree's path. Confirm:
-  ```
-  Now in [path], branch [branch].
-  ```
-- **"no" / declines:** stop here, make no changes.
-- **No worktrees besides main:**
-  ```
-  No active worktrees.
-  Start one with /speckit.specify, /speckit.sdd-workflow.fix-bug, or /speckit.sdd-workflow.fix-debt.
-  ```
+If an argument identifies a worktree, use it; otherwise present the list and let
+the user choose. For a selection, use that absolute cwd explicitly on subsequent
+tool calls and show the path. A shell cd does not change future tool-call cwd.
+When there are no active worktrees, explain the commands that start work.
 
 ## Constraints
 
-- **Read-only:** this command only lists and navigates (`cd`) — never merges, removes, or modifies anything. Use `/speckit.sdd-workflow.finish` to close one out.
-- **Git is the source of truth:** `git worktree list` decides what exists; the kanban file only adds display context on top.
-- **Degrade gracefully:** a missing or unreadable `docs/kanban/[type]-[slug].md` should never block the listing — just show less detail for that entry.
+- Read-only: list and navigate; merge/removal belongs to finish.
+- Git determines existing worktrees; live worktree records determine live status.

@@ -1,5 +1,5 @@
 ---
-description: Close out the current feature, bug, or tech debt worktree. Merges its PR, removes the worktree, returns to main, and updates the kanban entry. Run this from inside the worktree you want to finish.
+description: Verify merge state, merge an authorized PR, and safely close its worktree and tracking.
 ---
 
 ## User Input
@@ -8,108 +8,72 @@ description: Close out the current feature, bug, or tech debt worktree. Merges i
 $ARGUMENTS
 ```
 
-## Step 1 — Identify the branch and type
+## Step 1 — Load the execution contract
 
-Determine the current branch: `git branch --show-current`.
+Resolve `.specify/extensions/sdd-workflow/` in this checkout or the primary checkout
+from `git worktree list`. Read `references/workflow.md` there (once per session;
+reload after compaction/update). Use its `scripts/sdd.py` with --root pointing to
+the active worktree. Read applicable project rules and phase-relevant context.
 
-If `$ARGUMENTS` was given instead (a slug or branch name), use that. Otherwise infer from the current branch.
+## Step 2 — Resolve the item and destination
 
-Parse the prefix to determine the artifact type and its kanban file:
-- `feature/[slug]` → type `feature` → `docs/kanban/feature-[slug].md`
-- `bugfix/[slug]` → type `bug` → `docs/kanban/bug-[slug].md`
-- `refactor/[slug]` → type `debt` → `docs/kanban/debt-[slug].md`
+Resolve the slug/branch from arguments or current branch and matching live Kanban
+record. Use git worktree list to identify the primary checkout and exact worktree.
+Read the record's type and spec path; honor actual project branch conventions.
+Determine default branch from repository metadata (do not assume main). Save
+absolute paths and operate with explicit cwd. Require clean source and primary
+worktrees before merge/cleanup; preserve dirty work and explain a blocker.
 
-If the current branch doesn't match any of these prefixes (e.g. you're on `main`), ask the user which feature/bug/debt slug to finish.
+## Step 3 — Verify the PR and evidence
 
-## Step 2 — Locate the main repo and the worktree
+Use gh pr view with an explicit branch and --json number,title,url,state,baseRefName,
+headRefName,headRefOid,mergeCommit. Check head/base identify this item and intended default
+branch. If no PR exists, point to delivery; do not delete anything.
 
-Run `git worktree list` (each line is `<path> <sha> [<branch>]`; do not pass `--porcelain` — command wrappers in some setups strip it).
+- CLOSED without merge: stop, preserve the worktree and status. It is not completed.
+- MERGED: record its merge commit and continue to reconciliation below.
+- OPEN: for v3 work run the runtime finish gate; require the PR head to contain all
+  verified implementation/tracking commits. Check CI and unresolved review blockers.
+  Show the PR and merge method, and use existing explicit merge authority or obtain
+  it if absent. Prefer the repository's configured method. Explain that squash
+  retains the final state, not intermediate per-task audit history.
 
-- The first line listed is always the main worktree — record its path as the main repo root.
-- Find the line whose `[<branch>]` matches the current branch — record its path as the worktree path. If no dedicated worktree exists (legacy work done before this convention), the worktree path is the same as the main repo root — cleanup in Step 5 will just skip the removal.
+For legacy v2 work lacking v3 artifacts, inspect its existing acceptance/test
+and review evidence and report the limitation; obtain explicit human acceptance
+before merging instead of fabricating a v3 verification report.
 
-## Step 3 — Verify the PR
+## Step 4 — Merge and reconcile before removal
 
-```bash
-gh pr view --json number,title,url,state
-```
+For an authorized open PR, run gh pr merge with the chosen method **without**
+--delete-branch while its branch is checked out in a worktree. Re-query state;
+continue only when MERGED. Fetch the target branch into the clean primary checkout
+and fast-forward it (git pull --ff-only). Verify its history contains the PR merge
+commit and the item's tracking file before removing any worktree. If the primary
+checkout is on another branch, preserve it and ask before switching if necessary.
+When the item used the primary checkout directly, retain it and skip removal.
 
-- No PR found → stop and tell the user to open one first (`gh pr create`, or re-run the command that was supposed to open it: `/speckit.implement` for features, `/speckit.sdd-workflow.fix-bug` or `/speckit.sdd-workflow.fix-debt` for bugs/debt).
-- PR state is already `MERGED` or `CLOSED` → skip Step 4 and go straight to Step 5.
-- PR state is `OPEN` → continue to Step 4.
+If tracking was omitted from a legacy PR, reconstruct it from the preserved
+worktree and PR evidence before cleanup. Do not assume an unpushed URL/status
+commit reached the default branch. Check for local commits not represented by the
+PR by comparing the saved PR headRefOid with the local branch tip; preserve the
+worktree and ask before discarding any additional work.
 
-## Step 4 — Confirm and merge
+## Step 5 — Close tracking and cleanup
 
-Show the user:
+On the updated default branch set feature status completed, or bug/debt resolved;
+clear worktree and update the date. Preserve PR URL and resolution notes. Commit
+only changed tracking and push when authorized. If direct writes are forbidden by
+branch protection, create a tracking PR and retain the worktree until that update
+is safely published. On re-entry a missing worktree/already-closed record is a
+successful no-op; never require a new empty commit.
 
-```
-PR #[number]: [title]
-[url]
-
-Squash-merge this PR and delete the remote branch?
-```
-
-**Wait for explicit confirmation before merging.**
-
-After approval:
-
-```bash
-gh pr merge [number] --squash --delete-branch
-```
-
-## Step 5 — Remove the worktree and return to main
-
-`cd` into the main repo root (from Step 2) — you cannot remove a worktree while it's your current directory.
-
-- If the worktree path differs from the main repo root:
-
-```bash
-git worktree remove [worktree-path]
-```
-
-  If this fails because of uncommitted changes, **stop** and tell the user to commit or stash them first. Never force-remove a worktree with uncommitted work.
-
-- If no dedicated worktree existed (legacy case), skip this removal.
-
-Then:
-
-```bash
-git checkout main
-git pull
-```
-
-## Step 6 — Update the kanban entry (on main)
-
-The merged PR already carried `docs/kanban/[type]-[slug].md` onto `main` with its
-in-flight status. Apply the closing transition here and push it:
-
-- **Type = feature** and `status` is not already `completed` → set `status: completed`.
-- **Type = bug or debt** → already `resolved` from `/speckit.sdd-workflow.fix-bug` or `/speckit.sdd-workflow.fix-debt`. No status change.
-- Clear the `worktree:` field (set it empty) — the worktree has been removed.
-- Bump `updated:` to today's date.
-
-```bash
-git add docs/kanban/[type]-[slug].md
-git commit -m "docs: finish [slug]"
-git push
-```
-
-## Step 7 — Report
-
-```
-[slug] finished.
-
-PR #[number] merged (squash) — remote branch deleted.
-Worktree .worktrees/[slug] removed.
-Kanban: docs/kanban/[type]-[slug].md — [status: completed, or "already resolved — unchanged"].
-
-Back on main, up to date.
-```
+After successful reconciliation/publication, remove only the clean dedicated
+worktree with git worktree remove (never force). Delete the remote item branch
+when authorized and still present; retain local history unless deletion was also
+requested. Report actual PR state, merge method, tracking and cleanup outcome.
 
 ## Constraints
 
-- **Human gate:** explicit confirmation required before merging the PR
-- **Never force-remove a worktree** with uncommitted changes — stop and ask instead
-- **Works for any of the three branch types:** `feature/*`, `bugfix/*`, `refactor/*`
-- **No PR, no merge:** if no PR exists for the branch, stop and point to the right command to create one
-- **Kanban status only advances for features:** bug/debt entries are already `resolved` before this command runs; always clear `worktree:` and push the change to `main`
+- CLOSED is not MERGED; only confirmed merges advance completion.
+- Reconcile/publish before cleanup; protect dirty or unmerged local work.
+- Honor existing remote authority; merge authorization is distinct from local plan.
