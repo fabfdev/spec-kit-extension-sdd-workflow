@@ -63,7 +63,7 @@ in sync.
 
 ## Token budget (since v4.0.0)
 
-- Hot-path commands (`fix-bug`, `fix-debt`, `finish`) must stay
+- Hot-path commands (`fix-bug`, `fix-debt`, `finish`, `implement-all`) must stay
   **≤ 3072 bytes**. One-time commands (`setup`, `product-prd`, `sdd`,
   `import-notion`) must stay ≤ 8192 bytes (`tests/test_command_sizes.py`).
 - Commands are self-contained: no shared contract file and no runtime script.

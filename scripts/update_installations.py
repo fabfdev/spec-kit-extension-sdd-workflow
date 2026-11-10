@@ -14,7 +14,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "4.1.0"
+VERSION = "4.2.0"
 # invariant: global skills for commands removed from the packages; deleted (with backup) on --apply.
 RETIRED_SKILLS = ("speckit-sdd-workflow-worktrees",)
 # invariant: installed packages must carry these files for the commands to work.

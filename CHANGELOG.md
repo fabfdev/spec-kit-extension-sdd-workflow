@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.2.0
+
+- New `/speckit.sdd-workflow.implement-all [slug]`: the main session only
+  orchestrates. Each remaining task goes to one fresh subagent (model `opus`),
+  which follows Steps 2-5 of the installed `speckit.implement.md` and replies
+  with a fixed six-line report (task, status, commit, files, gate, notes).
+  The run stops on the first failed/blocked task or hash mismatch; after the
+  last task the orchestrator does `--final`, the optional review and the PR.
+  Legacy `N_task.md` plans stay on `/speckit.implement`.
+
 ## 4.1.0
 
 - No more git worktrees: `fix-bug` / `fix-debt` create `bugfix/` / `refactor/`
