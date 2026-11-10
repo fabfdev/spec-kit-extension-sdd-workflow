@@ -1,5 +1,5 @@
 ---
-description: Register and fix a bug as docs/kanban/bug-[slug].md in a dedicated worktree, with a regression test, a test gate, one commit and a PR.
+description: Register and fix a bug as docs/kanban/bug-[slug].md on its own branch, with a regression test, a test gate, one commit and a PR.
 ---
 
 ## User Input
@@ -10,7 +10,7 @@ $ARGUMENTS
 
 ## Step 1 — Register or resume
 
-If `$ARGUMENTS` names an existing `docs/kanban/bug-[slug].md`: `resolved` → tell the user and stop; `in-progress` → work in its worktree (check `git worktree list`, default format) and go to Step 3.
+If `$ARGUMENTS` names an existing `docs/kanban/bug-[slug].md`: `resolved` → tell the user and stop; `in-progress` → `git switch bugfix/[slug]` (held by a legacy worktree: work in that path) and go to Step 3.
 
 Otherwise derive a slug (kebab-case, ≤5 words) and draft:
 
@@ -21,7 +21,6 @@ type: bug
 status: reported
 slug: [slug]
 branch: bugfix/[slug]
-worktree:
 priority: low | medium | high
 pr:
 created: YYYY-MM-DD
@@ -37,19 +36,21 @@ updated: YYYY-MM-DD
 
 Ask in one round: priority (if unclear) and **fix now or defer?** Defer: save it in the current checkout, commit `docs: register bug [slug]`, stop.
 
-## Step 2 — Worktree
+## Step 2 — Branch
 
-If `.worktrees/` is not in `.gitignore`, add it and commit `chore: ignore .worktrees/`. Reuse an existing worktree; otherwise (drop `-b` if the branch already exists):
+The working tree must be clean; otherwise ask the user to commit or stash first. Branch from the up-to-date default branch (if the branch already exists, just `git switch bugfix/[slug]`):
 
 ```bash
-git worktree add .worktrees/bugfix-[slug] -b bugfix/[slug]
+git switch [default-branch]
+git pull --ff-only
+git switch -c bugfix/[slug]
 ```
 
-Inside it save the kanban file with `status: in-progress` and `worktree: .worktrees/bugfix-[slug]`.
+Save the kanban file with `status: in-progress`.
 
 ## Step 3 — Reproduce and fix
 
-Read the kanban file, the files under Location and only the relevant conventions in `docs/core/sdd.md`. Write a regression test that fails for this bug, then fix it. Stay inside the bug's scope.
+Read the kanban file, the files under Location and only the relevant conventions in `docs/core/sdd.md`. Locate code with graphify when `graphify-out/graph.json` exists: `graphify query "[what you need]" --budget 1500` (or `graphify explain "[symbol]"`), then open only the files it names; never read `GRAPH_REPORT.md`. Without a graph, or if a named file no longer exists, search with grep/glob. Write a regression test that fails for this bug, then fix it. Stay inside the bug's scope.
 
 ## Step 4 — Gate
 
@@ -79,5 +80,5 @@ Report the change and the gate result, then: "Run `/clear`; merge with `/speckit
 
 ## Constraints
 
-- Never fix on the main checkout; worktree creation is idempotent.
+- Never fix on the default branch; re-runs are idempotent.
 - No commit with failing tests. Kanban: `reported → in-progress → resolved`.

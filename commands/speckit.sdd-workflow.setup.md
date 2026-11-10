@@ -36,7 +36,7 @@ Write `docs/kanban/README.md` with the project name as the `# [Project Name] —
   - `feature-<slug>.md` — a feature (managed by the preset commands)
   - `bug-<slug>.md` — a bug (`/speckit.sdd-workflow.fix-bug`)
   - `debt-<slug>.md` — technical debt (`/speckit.sdd-workflow.fix-debt`)
-- **Live board:** `/speckit.sdd-workflow.worktrees`. **History of an item:** `git log docs/kanban/<file>`.
+- **Open items:** files whose `status` is not `completed`, `resolved` or `abandoned`. **History of an item:** `git log docs/kanban/<file>`.
 - **Frontmatter schema** (put it in the file inside a `yaml` code fence):
 
 ```yaml
@@ -46,7 +46,6 @@ type: feature | bug | debt
 status: <see lifecycle below>
 slug: <kebab-slug>
 branch: feature/<slug> | bugfix/<slug> | refactor/<slug>
-worktree: .worktrees/<...>      # set when the worktree exists; empty otherwise
 priority: low | medium | high
 spec: specs/<slug>/             # feature only
 tasks_done: 0                   # feature only
@@ -126,23 +125,10 @@ If the user asks to address technical debt, invoke `/speckit.sdd-workflow.fix-de
 
 ---
 
-## Step 4 — Gitignore `.worktrees/`
-
-Check if `.gitignore` exists in the project root.
-
-- If it exists: append `.worktrees/` on a new line (only if not already present).
-- If it does not exist: create `.gitignore` containing:
-
-```
-.worktrees/
-```
-
----
-
-## Step 5 — Commit the scaffold
+## Step 4 — Commit the scaffold
 
 ```bash
-git add docs/kanban/README.md docs/health/scan.md .gitignore
+git add docs/kanban/README.md docs/health/scan.md
 git commit -m "chore: initialize SDD workflow structure"
 ```
 
@@ -150,7 +136,7 @@ git commit -m "chore: initialize SDD workflow structure"
 
 ---
 
-## Step 6 — Report
+## Step 5 — Report
 
 ```
 SDD workflow initialized for [Project Name].
@@ -158,10 +144,8 @@ SDD workflow initialized for [Project Name].
 Local:
 ✓ docs/kanban/README.md   (tracking board — schema + status lifecycle)
 ✓ docs/health/scan.md     (health scan guide)
-✓ .gitignore              (contains .worktrees/)
 
 Tracking: one markdown file per item under docs/kanban/. History = git log.
-Live board = /speckit.sdd-workflow.worktrees.
 
 Next step: run /speckit.sdd-workflow.product-prd to create the product PRD.
 ```

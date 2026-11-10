@@ -14,7 +14,9 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "4.0.0"
+VERSION = "4.1.0"
+# invariant: global skills for commands removed from the packages; deleted (with backup) on --apply.
+RETIRED_SKILLS = ("speckit-sdd-workflow-worktrees",)
 # invariant: installed packages must carry these files for the commands to work.
 RUNTIME_ASSETS = {"presets": ("scripts/sdd.py",), "extensions": ()}
 
@@ -180,6 +182,22 @@ def update_global(skills_root, owned, backup):
     return changed
 
 
+def retire_global(skills_roots, backup):
+    """Back up and remove global copies of commands that no longer ship."""
+    removed = []
+    for root in skills_roots:
+        for name in RETIRED_SKILLS:
+            entry = root / name
+            if not (entry.exists() or entry.is_symlink()):
+                continue
+            # why: a symlink (e.g. ~/.claude/skills -> ~/.agents/skills) is unlinked; its target is retired via its own root.
+            if not entry.is_symlink():
+                shutil.copytree(entry, backup / root.name / name, symlinks=True)
+            remove_path(entry)
+            removed.append(str(entry))
+    return removed
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
@@ -222,6 +240,9 @@ def main():
     if not args.no_global:
         changed = update_global(skills_root, owned, backup / "global-skills")
         print("UPDATED global skills: " + str(len(changed)))
+        roots = [skills_root, Path.home() / ".claude/skills"]
+        for path in retire_global(roots, backup / "retired-skills"):
+            print("REMOVED retired skill: " + path)
     print("Active feature documents/source were not migrated. Reopen agent sessions after updating.")
 
 

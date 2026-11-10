@@ -80,7 +80,7 @@ class InstallationTests(unittest.TestCase):
         def install(_project, args):
             calls.append(args)
             if args[:2] == ["preset", "add"]:
-                (package / "preset.yml").write_text('version: "4.0.0"')
+                (package / "preset.yml").write_text('version: "4.1.0"')
                 for path in ("scripts/sdd.py",):
                     target = package / path
                     target.parent.mkdir(parents=True, exist_ok=True)
@@ -135,6 +135,23 @@ class InstallationTests(unittest.TestCase):
         self.assertIn("new body", (real / "SKILL.md").read_text())
         self.assertEqual(unrelated.read_text(), "keep")
         self.assertEqual((self.base / "backup/speckit-implement.md").read_text(), "old")
+
+    def test_retired_skill_backed_up_and_symlink_alias_unlinked(self):
+        agents = self.base / "agents"
+        real = agents / "speckit-sdd-workflow-worktrees"
+        real.mkdir(parents=True)
+        (real / "SKILL.md").write_text("old")
+        claude = self.base / "claude"
+        claude.mkdir()
+        (claude / "speckit-sdd-workflow-worktrees").symlink_to(real)
+        keep = agents / "speckit-implement"
+        keep.mkdir()
+        removed = updater.retire_global([claude, agents], self.base / "backup")
+        self.assertEqual(len(removed), 2)
+        self.assertFalse((claude / "speckit-sdd-workflow-worktrees").is_symlink())
+        self.assertFalse(real.exists())
+        self.assertTrue(keep.exists())
+        self.assertEqual((self.base / "backup/agents/speckit-sdd-workflow-worktrees/SKILL.md").read_text(), "old")
 
     def test_global_skill_yaml_quotes_punctuation(self):
         content = updater.render_skill("speckit-plan", "preset", 'Plan: "approved"', "body")
