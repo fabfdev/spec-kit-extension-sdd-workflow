@@ -11,6 +11,9 @@
   removes its global skill copy (with a backup).
 - `setup` no longer adds `.worktrees/` to `.gitignore`; the kanban `worktree:`
   field is no longer written.
+- Code lookup prefers graphify: when `graphify-out/graph.json` exists, commands
+  run `graphify query "..." --budget 1500` (or `graphify explain`) and open only
+  the files it names, never `GRAPH_REPORT.md`; otherwise grep/glob as before.
 
 ## 4.0.0
 

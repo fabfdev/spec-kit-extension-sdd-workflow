@@ -50,7 +50,7 @@ Save the kanban file with `status: in-progress`.
 
 ## Step 3 — Reproduce and fix
 
-Read the kanban file, the files under Location and only the relevant conventions in `docs/core/sdd.md`. Write a regression test that fails for this bug, then fix it. Stay inside the bug's scope.
+Read the kanban file, the files under Location and only the relevant conventions in `docs/core/sdd.md`. Locate code with graphify when `graphify-out/graph.json` exists: `graphify query "[what you need]" --budget 1500` (or `graphify explain "[symbol]"`), then open only the files it names; never read `GRAPH_REPORT.md`. Without a graph, or if a named file no longer exists, search with grep/glob. Write a regression test that fails for this bug, then fix it. Stay inside the bug's scope.
 
 ## Step 4 — Gate
 

@@ -49,7 +49,7 @@ Save the kanban file with `status: in-progress`.
 
 ## Step 3 — Resolve
 
-Read the kanban file, the files under Location and only the relevant conventions in `docs/core/sdd.md`. Make sure existing tests cover the behavior you will touch; add the missing ones first. Implement the proposed solution without changing behavior beyond the acceptance criteria.
+Read the kanban file, the files under Location and only the relevant conventions in `docs/core/sdd.md`. Locate code with graphify when `graphify-out/graph.json` exists: `graphify query "[what you need]" --budget 1500` (or `graphify explain "[symbol]"`), then open only the files it names; never read `GRAPH_REPORT.md`. Without a graph, or if a named file no longer exists, search with grep/glob. Make sure existing tests cover the behavior you will touch; add the missing ones first. Implement the proposed solution without changing behavior beyond the acceptance criteria.
 
 ## Step 4 — Gate
 
