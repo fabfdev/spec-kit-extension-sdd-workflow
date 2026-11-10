@@ -1,22 +1,22 @@
 # Changelog
 
-## 3.0.0
+## 4.0.0
 
-Breaking workflow update from 2.x:
+Lean rebuild from 2.0.0 that keeps the useful fixes from 3.0.0 and drops what
+made sessions expensive.
 
-- Scope and combined technical/task approval replace file/commit/advance gates.
-- Adaptive small work uses a PRD with inline tasks; full work uses one tasks.md.
-- Requirement/acceptance IDs, task dependencies, proof commands and approval
-  records have an explicit machine-checked format. Legacy task files migrate
-  preserving completed work, criteria and IDs; see README.
-- Analyze stores input fingerprints and cumulative finding closure, reviews
-  changed inputs and impacts, and applies narrow scope-preserving corrections.
-- Every valid finding blocks readiness, including LOW/MEDIUM.
-- Sequential execution uses one atomic commit per task including tracking.
-- Local Python gates validate structure/freshness and execute deduplicated final
-  checks. A fresh independent reviewer judges criterion/test evidence once.
-- Repair worktree reuse, dirty maintenance-record transfer, live status reads,
-  PR metadata pushes and CLOSED-versus-MERGED handling before safe cleanup.
-- Runtime and protocol ship in both packages for standalone maintenance use.
+- `fix-bug` / `fix-debt`: register → worktree → (regression) test → fix →
+  gate → one commit → PR → stop for `/clear`. No analyze, proofs or reviewer.
+  The kanban file is now written inside the worktree (2.x left it uncommitted in
+  the main checkout).
+- `finish` (fixes from 3.0.0): `CLOSED` is not `MERGED`; merges without
+  `--delete-branch` while the branch is checked out in a worktree; detects the
+  default branch; `git pull --ff-only`; deletes the remote branch after cleanup;
+  re-runs are no-ops.
+- `worktrees` reads each item's live kanban file from its own worktree.
+- No shared `references/workflow.md` and no `scripts/sdd.py` in this package;
+  hot-path commands are at most 3 KB (tested).
+- `scripts/update_installations.py` kept (updated to 4.0.0, previews by
+  default); `publish_release.py` removed.
 
-Requires Python 3.8+ and Spec Kit CLI 0.9.0+. No external tracking service.
+Requires Spec Kit CLI 0.9.0+.

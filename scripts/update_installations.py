@@ -14,6 +14,10 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+VERSION = "4.0.0"
+# invariant: installed packages must carry these files for the commands to work.
+RUNTIME_ASSETS = {"presets": ("scripts/sdd.py",), "extensions": ()}
+
 
 def discover(projects_root):
     return sorted(path for path in projects_root.iterdir() if path.is_dir() and
@@ -29,8 +33,8 @@ def templates(source_root):
         manifest = directory / ("preset.yml" if name == "preset" else "extension.yml")
         if not manifest.is_file():
             raise ValueError("Missing sibling source manifest: " + str(manifest))
-        if 'version: "3.0.0"' not in manifest.read_text():
-            raise ValueError("Expected reviewed v3.0.0 source: " + str(directory))
+        if 'version: "' + VERSION + '"' not in manifest.read_text():
+            raise ValueError("Expected reviewed v" + VERSION + " source: " + str(directory))
         for path in sorted((directory / "commands").glob("*.md")):
             header, body = path.read_text().split("---", 2)[1:]
             description = next(line.partition(":")[2].strip() for line in header.splitlines()
@@ -43,14 +47,14 @@ def templates(source_root):
 def render_skill(skill_name, kind, description, body):
     # JSON string literals are also YAML strings, so punctuation stays safe.
     return ("---\nname: " + skill_name + "\ndescription: " + json.dumps(description) +
-            "\ncompatibility: Requires an installed SDD Workflow v3 package in the project\n"
-            "metadata:\n  source: " + kind + ":sdd-workflow\n  version: 3.0.0\n"
+            "\ncompatibility: Requires an installed SDD Workflow v" + VERSION.split(".")[0] +
+            " package in the project\nmetadata:\n  source: " + kind + ":sdd-workflow\n  version: " + VERSION + "\n"
             "user-invocable: true\ndisable-model-invocation: false\n---\n\n" + body + "\n")
 
 
 def package_snapshot(source, destination):
     shutil.copytree(source, destination, ignore=shutil.ignore_patterns(
-        ".git", "__pycache__", "*.pyc", ".dist", ".superpowers"))
+        ".git", ".github", "tests", "__pycache__", "*.pyc", ".dist", ".superpowers"))
 
 
 def project_paths(project):
@@ -145,9 +149,9 @@ def update_project(project, source_root, backup):
         for kind, manifest in (("presets", "preset.yml"), ("extensions", "extension.yml")):
             if installed[kind]:
                 directory = project / ".specify" / kind / "sdd-workflow"
-                if 'version: "3.0.0"' not in (directory / manifest).read_text():
+                if 'version: "' + VERSION + '"' not in (directory / manifest).read_text():
                     raise RuntimeError("Installed version mismatch: " + str(directory))
-                for relative in ("scripts/sdd.py", "references/workflow.md"):
+                for relative in RUNTIME_ASSETS[kind]:
                     if not (directory / relative).is_file():
                         raise RuntimeError("Missing installed runtime asset: " + relative)
     except Exception:
@@ -195,7 +199,7 @@ def main():
     skills_root = args.skills_root.expanduser()
     global_names = [] if args.no_global else sorted(name for name in owned
                                                   if (skills_root / name / "SKILL.md").is_file())
-    print(json.dumps({"mode": "apply" if args.apply else "preview", "version": "3.0.0",
+    print(json.dumps({"mode": "apply" if args.apply else "preview", "version": VERSION,
                       "projects": [str(p) for p in projects], "global_skills": global_names}, indent=2))
     if not args.apply:
         return

@@ -1,5 +1,5 @@
 ---
-description: Fix a scoped bug with regression evidence, atomic commits and independent final review.
+description: Register and fix a bug as docs/kanban/bug-[slug].md in a dedicated worktree, with a regression test, a test gate, one commit and a PR.
 ---
 
 ## User Input
@@ -8,82 +8,76 @@ description: Fix a scoped bug with regression evidence, atomic commits and indep
 $ARGUMENTS
 ```
 
-## Step 1 — Load the execution contract
+## Step 1 — Register or resume
 
-Resolve `.specify/extensions/sdd-workflow/` in this checkout or the primary checkout
-from `git worktree list`. Read `references/workflow.md` there (once per session;
-reload after compaction/update). Use its `scripts/sdd.py` with --root pointing to
-the active worktree. Read applicable project rules and phase-relevant context.
+If `$ARGUMENTS` names an existing `docs/kanban/bug-[slug].md`: `resolved` → tell the user and stop; `in-progress` → work in its worktree (check `git worktree list`, default format) and go to Step 3.
 
-## Step 2 — Resolve scope and existing registration
+Otherwise derive a slug (kebab-case, ≤5 words) and draft:
 
-Derive the slug from the request, or read `docs/kanban/bug-[slug].md` for an
-existing item. Inspect the live branch/worktree record before the primary
-checkout's copy. Preserve completed work, PR URL and counters on resumption.
-A merged/resolved item is complete; ask before reopening it under the same slug.
-For a new request, inspect the referenced code and ask only unresolved decisions.
-Invoking this command with a request to fix authorizes working now; ask fix-versus-
-defer only if the request was explicitly to register/report or is ambiguous.
-Default priority to medium unless evidence or the user indicates otherwise.
+```markdown
+---
+name: [Bug title]
+type: bug
+status: reported
+slug: [slug]
+branch: bugfix/[slug]
+worktree:
+priority: low | medium | high
+pr:
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+---
 
-If deferring: save only the registration with status reported and body sections
-Location, Current behavior, Expected behavior, Steps to reproduce, Suggested fix; commit that record and stop. Keep other dirty work intact.
+## Location
+## Current behavior
+## Expected behavior
+## Steps to reproduce
+## Suggested fix
+```
 
-## Step 3 — Reuse or create the destination first
+Ask in one round: priority (if unclear) and **fix now or defer?** Defer: save it in the current checkout, commit `docs: register bug [slug]`, stop.
 
-Resolve the primary checkout with `git worktree list`, and match the actual branch
-(default `bugfix/[slug]`, or the project's convention). Reuse its worktree; attach
-an existing branch without -b; otherwise create it once at the absolute primary
-checkout path `.worktrees/bugfix-[slug]`. Ensure worktrees are ignored. Every
-subsequent write/tool call uses that worktree explicitly.
+## Step 2 — Worktree
 
-For an existing record only in the original checkout (including uncommitted
-content), carry its exact content into the destination with the file tool, merge
-with any newer destination record, and preserve the original dirty file. For a
-new item, write its registration directly in the destination. Never assume a dirty
-file transfers automatically between worktrees.
+If `.worktrees/` is not in `.gitignore`, add it and commit `chore: ignore .worktrees/`. Reuse an existing worktree; otherwise (drop `-b` if the branch already exists):
 
-Registration frontmatter: name, type: bug, status: reported, slug, actual branch,
-worktree, priority, spec: specs/[slug]/, tasks_done, tasks_total, pr, created, updated.
-Body sections: Location, Current behavior, Expected behavior, Steps to reproduce, Suggested fix; append Resolution after verified delivery.
+```bash
+git worktree add .worktrees/bugfix-[slug] -b bugfix/[slug]
+```
 
-## Step 4 — Approve the adaptive plan
+Inside it save the kanban file with `status: in-progress` and `worktree: .worktrees/bugfix-[slug]`.
 
-Use a small PRD with inline tasks/checks for at most three obvious atomic changes;
-otherwise use full PRD/techspec/consolidated tasks. Write all execution artifacts
-under `specs/[slug]/` using the shared contract. A bug needs reproduction and a
-regression check of the expected outcome; debt needs preserved behavior/invariants
-and a check of the intended improvement. Skip unrelated refactors and boilerplate.
+## Step 3 — Reproduce and fix
 
-Run validate --stage spec and --stage tasks. **Obtain scope and plan approval**
-(one combined approval for small work); record the actual user's words. Existing
-unchanged approvals stay valid. Analyze with scan, semantic review, narrow fixes
-and record-analysis as defined by the contract; the standalone extension ships
-its own runtime. Every valid finding must close before `ready`.
+Read the kanban file, the files under Location and only the relevant conventions in `docs/core/sdd.md`. Write a regression test that fails for this bug, then fix it. Stay inside the bug's scope.
 
-## Step 5 — Execute and review
+## Step 4 — Gate
 
-Run ready and baseline checks before the first edit. Set in-progress. Execute
-approved tasks sequentially: implement + meaningful tests → gate --task Tn → mark
-done and recompute tracking → one `fix:` commit with code/tests/tracking.
-Continue without per-task confirmation; pause for new decisions or blocked gates.
+Run the tests around the change, then the project's full test/lint command once. Fix failures; after 2 failed fix attempts, stop and report the output.
 
-After all tasks, run prove, obtain one fresh independent review and save
-verification.json. Fix valid findings, commit fixes, rerun proofs and check their
-impacts. Run the runtime finish gate before declaring the work verified.
-Persist scope/plan decisions and a concise Handoff when paused.
+## Step 5 — Commit and PR
 
-## Step 6 — Deliver and track
+Set kanban `status: resolved`, `updated:` and append `## Resolution` (date and summary). One commit:
 
-With existing session authority, push the branch, reuse/create its PR using a body
-file, set in-review and PR URL in Kanban, commit that metadata and push again.
-Otherwise report the verified local result and only ask for missing remote
-authority. Record the resolution evidence, but status becomes resolved only when
-finish confirms the PR was merged. Record usage when exposed; unavailable = null.
+```bash
+git add [code and test files] docs/kanban/bug-[slug].md
+git commit -m "fix: [description]"
+git push -u origin bugfix/[slug]
+```
+
+Write a PR body file (fix, how to verify, tracking file), then:
+
+```bash
+gh pr create --title "fix: [description]" --body-file [body-file]
+```
+
+Set `pr: [url]`, commit `docs: link PR for bug [slug]` and push.
+
+## Step 6 — Stop
+
+Report the change and the gate result, then: "Run `/clear`; merge with `/speckit.sdd-workflow.finish`."
 
 ## Constraints
 
-- Preserve original dirty records during worktree transitions.
-- One source of task truth; all statuses/counters are derived and idempotent.
-- One commit per task, and one independent final review per completed item.
-- A fix request authorizes work now; approval milestones settle scope/plan.
+- Never fix on the main checkout; worktree creation is idempotent.
+- No commit with failing tests. Kanban: `reported → in-progress → resolved`.

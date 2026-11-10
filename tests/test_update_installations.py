@@ -80,8 +80,8 @@ class InstallationTests(unittest.TestCase):
         def install(_project, args):
             calls.append(args)
             if args[:2] == ["preset", "add"]:
-                (package / "preset.yml").write_text('version: "3.0.0"')
-                for path in ("scripts/sdd.py", "references/workflow.md"):
+                (package / "preset.yml").write_text('version: "4.0.0"')
+                for path in ("scripts/sdd.py",):
                     target = package / path
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_text("asset")

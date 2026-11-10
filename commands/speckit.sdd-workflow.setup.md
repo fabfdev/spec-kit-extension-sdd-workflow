@@ -13,19 +13,22 @@ minimal local directory structure, including `docs/kanban/` — one markdown fil
 per work item (feature, bug, tech debt) that tracks its status and carries its
 narrative. There are no external services: `git log docs/kanban/` is the history.
 
-Run after installation; rerunning fills missing scaffolding and offers a narrow schema upgrade for v2 projects. Preserve existing records and custom notes.
+Run it **once** per project, right after installing the extension.
 
 ---
 
 ## Step 1 — Collect project name
 
-Infer the project name from its manifest or directory; ask only if ambiguous. Resolve the installed extension runtime and read `references/workflow.md` as described by the other commands.
+Ask the user:
+> "What is the name of this project? (Used only as the title of `docs/kanban/README.md`)"
+
+Wait for the answer before proceeding.
 
 ---
 
 ## Step 2 — Create `docs/kanban/README.md`
 
-If the file exists, preserve its content and update only obsolete lifecycle/schema guidance after showing the migration diff.
+Skip if the file already exists — never overwrite.
 
 Write `docs/kanban/README.md` with the project name as the `# [Project Name] — Kanban` title, followed by this reference content verbatim (it is the schema every other command depends on):
 
@@ -33,7 +36,7 @@ Write `docs/kanban/README.md` with the project name as the `# [Project Name] —
   - `feature-<slug>.md` — a feature (managed by the preset commands)
   - `bug-<slug>.md` — a bug (`/speckit.sdd-workflow.fix-bug`)
   - `debt-<slug>.md` — technical debt (`/speckit.sdd-workflow.fix-debt`)
-- **Live board:** `/speckit.sdd-workflow.worktrees`. **History of an item:** `git log docs/kanban/<file>`. Squash retains final state on the default branch; intermediate history depends on branch retention.
+- **Live board:** `/speckit.sdd-workflow.worktrees`. **History of an item:** `git log docs/kanban/<file>`.
 - **Frontmatter schema** (put it in the file inside a `yaml` code fence):
 
 ```yaml
@@ -45,9 +48,9 @@ slug: <kebab-slug>
 branch: feature/<slug> | bugfix/<slug> | refactor/<slug>
 worktree: .worktrees/<...>      # set when the worktree exists; empty otherwise
 priority: low | medium | high
-spec: specs/<slug>/             # all v3 work items
-tasks_done: 0                   # derived from task statuses
-tasks_total: 0                  # derived from task statuses
+spec: specs/<slug>/             # feature only
+tasks_done: 0                   # feature only
+tasks_total: 0                  # feature only
 pr:                             # PR URL once opened
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
@@ -56,7 +59,7 @@ updated: YYYY-MM-DD
 
 - **Status lifecycle:**
   - Feature: `planned → specced → ready → in-progress → in-review → completed`
-  - Bug / debt: `reported → in-progress → in-review → resolved` (resolved only after merge)
+  - Bug / debt: `reported → in-progress → resolved`
   - Any item: `abandoned` (dropped)
 - **Body sections:**
   - `feature` — `## Notes` (optional freeform)
@@ -74,11 +77,12 @@ Write `docs/health/scan.md` with this content (the inner triple backticks are es
 ```markdown
 # Health Scan Guide
 
-Run periodically or when requested; reuse current CI results for unchanged inputs.
+Run after merging any PR to keep the project health visible.
 
 ## When to run
 
-- After changes with uncertain health impact
+- After merging a feature PR
+- After merging a bugfix PR
 - Periodically (e.g., weekly) to catch accumulating debt
 
 ## What to scan
@@ -89,7 +93,7 @@ Read every `docs/kanban/bug-*.md` and `docs/kanban/debt-*.md`. Keep the ones who
 
 ### 2 — Failing or skipped tests
 
-Use current CI/test evidence when it covers the same inputs; run missing relevant checks and report failures or unexpected skips.
+Run the project's test suite and report any failures or skipped tests.
 
 ### 3 — Lint / type errors
 
@@ -135,13 +139,7 @@ Check if `.gitignore` exists in the project root.
 
 ---
 
-## Step 5 — Validate runtime and commit the scaffold
-
-Verify the installed package contains `scripts/sdd.py` and `references/workflow.md`.
-They run from the package; do not copy them into application source. On a rerun,
-stage only scaffold files that changed and skip an empty commit.
-
-## Commit
+## Step 5 — Commit the scaffold
 
 ```bash
 git add docs/kanban/README.md docs/health/scan.md .gitignore
@@ -162,7 +160,7 @@ Local:
 ✓ docs/health/scan.md     (health scan guide)
 ✓ .gitignore              (contains .worktrees/)
 
-Tracking: one markdown file per item under docs/kanban/. History = git log (squash retains final state only).
+Tracking: one markdown file per item under docs/kanban/. History = git log.
 Live board = /speckit.sdd-workflow.worktrees.
 
 Next step: run /speckit.sdd-workflow.product-prd to create the product PRD.
