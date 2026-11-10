@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.1.0
+
+- No more git worktrees: `fix-bug` / `fix-debt` create `bugfix/` / `refactor/`
+  branches from the updated default branch in the main checkout.
+- `finish` merges, updates the default branch, closes tracking, then deletes the
+  local (`-D`, after the confirmed squash merge) and remote branch. A branch
+  still held by a legacy worktree is cleaned up by removing that worktree first.
+- Removed `/speckit.sdd-workflow.worktrees`; `update_installations.py` also
+  removes its global skill copy (with a backup).
+- `setup` no longer adds `.worktrees/` to `.gitignore`; the kanban `worktree:`
+  field is no longer written.
+
 ## 4.0.0
 
 Lean rebuild from 2.0.0 that keeps the useful fixes from 3.0.0 and drops what

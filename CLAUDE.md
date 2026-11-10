@@ -7,7 +7,7 @@ ships `commands/*.md` — prompt templates that spec-kit installs into a *target
 project as slash commands (`/speckit.sdd-workflow.setup`,
 `/speckit.sdd-workflow.fix-bug`, …). This is the layer spec-kit core lacks:
 project inception (product PRD, SDD), health management (bugs, tech debt), and
-parallel-work lifecycle (dedicated worktrees: list, switch, finish). Since
+closing finished items (finish). Since
 v2.0.0 all tracking is local: one markdown file per work item under
 `docs/kanban/`, committed with the work.
 
@@ -26,18 +26,14 @@ in sync.
 ## Editing the command templates
 
 - **Match the house style**: numbered steps, imperative voice, human approval
-  gates in bold, idempotency checks before creating worktrees/branches, a
+  gates in bold, idempotency checks before creating branches, a
   `## Constraints` recap at the end.
 - **Every template must work with or without a CLI wrapper installed.** Users
   commonly run [rtk](https://github.com/rtk-ai/rtk) (a `PreToolUse` Bash hook
   that rewrites `git`, `gh`, `ls`, `grep`, … to compact equivalents). Write shell
   that survives that rewrite:
-  - **No `git ... --porcelain` for output the template parses.** rtk's
-    `rtk git worktree` drops `--porcelain` and reformats. Parse the default
-    `git worktree list` format instead: `<path> <sha> [<branch>]`, one line each,
-    first line = main worktree, branch is the value inside `[...]`. This works
-    identically with and without rtk. (All worktree-inspecting steps here —
-    `fix-bug`, `fix-debt`, `finish`, `worktrees` — already follow this.)
+  - **No `git ... --porcelain` for output the template parses.** rtk drops it
+    and reformats; parse default formats instead.
   - **No command substitution (`$(...)`, backticks), no process substitution,
     no file redirects (`> f`, `>> f`), no heredocs (`<< EOF`)** in a fenced
     `bash` block. Any of these makes rtk pass the command through unrewritten
@@ -45,11 +41,11 @@ in sync.
     discrete commands; use the agent's file-writing tool to create file bodies
     (e.g. a PR body file for `gh pr create --body-file`), not `>`.
   - `gh ... --json` (used by `finish` to read PR state), `gh pr merge`,
-    `gh pr create`, `git add/commit`, `git worktree add` are all safe — rtk
+    `gh pr create`, `git add/commit`, `git switch` are all safe — rtk
     passes them through or emits a faithful confirmation line.
 - **Tracking is local (since v2.0.0).** Every work item is
   `docs/kanban/<type>-<slug>.md` (`type` ∈ `feature|bug|debt`): YAML frontmatter
-  for structured fields (`status`, `slug`, `branch`, `worktree`, `priority`,
+  for structured fields (`status`, `slug`, `branch`, `priority`,
   `tasks_done`, `tasks_total`, `pr`, `created`, `updated`), markdown body for the
   narrative. Status transitions and counters are frontmatter edits, committed
   alongside the work — `git log docs/kanban/` is the audit trail. The canonical
@@ -60,12 +56,14 @@ in sync.
   reads a v1.x Notion board via `mcp__notion__*` once and writes `docs/kanban/`.
   No other template may reference Notion, `.sdd-notion.json`, or any MCP call.
 - **`finish` writes on `main`.** The in-flight kanban file is carried to `main`
-  by the merged PR; the closing transition (`status: completed`, clear
-  `worktree:`) is a fresh commit on `main` that `finish` pushes.
+  by the merged PR; the closing transition (`status: completed`) is a fresh
+  commit on `main` that `finish` pushes.
+- **No git worktrees (since v4.1.0).** Each item is a branch in the main
+  checkout. Commands mention worktrees only to finish a legacy one.
 
 ## Token budget (since v4.0.0)
 
-- Hot-path commands (`fix-bug`, `fix-debt`, `finish`, `worktrees`) must stay
+- Hot-path commands (`fix-bug`, `fix-debt`, `finish`) must stay
   **≤ 3072 bytes**. One-time commands (`setup`, `product-prd`, `sdd`,
   `import-notion`) must stay ≤ 8192 bytes (`tests/test_command_sizes.py`).
 - Commands are self-contained: no shared contract file and no runtime script.

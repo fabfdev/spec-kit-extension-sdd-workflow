@@ -1,7 +1,7 @@
 # spec-kit-extension-sdd-workflow
 
 A [Spec Kit](https://github.com/github/spec-kit) extension that adds project
-inception, health management and the parallel-work lifecycle. It pairs with
+inception, health management and closing of finished items. It pairs with
 [`spec-kit-preset-sdd-workflow`](https://github.com/fabfdev/spec-kit-preset-sdd-workflow),
 which replaces the feature commands.
 
@@ -13,13 +13,12 @@ at most 3 KB each and run one item per session; `/clear` between them.
 
 | Command | When | Produces |
 |---------|------|----------|
-| `/speckit.sdd-workflow.setup` | once per project | `docs/kanban/README.md` (schema), `docs/health/scan.md`, `.worktrees/` in `.gitignore` |
+| `/speckit.sdd-workflow.setup` | once per project | `docs/kanban/README.md` (schema), `docs/health/scan.md` |
 | `/speckit.sdd-workflow.product-prd` | once | `docs/core/prd.md` |
 | `/speckit.sdd-workflow.sdd` | once, after the PRD | `docs/core/sdd.md`, the architecture authority the preset commands read |
-| `/speckit.sdd-workflow.fix-bug` | per bug | `docs/kanban/bug-[slug].md`, worktree `bugfix/[slug]`, regression test, one commit, PR |
-| `/speckit.sdd-workflow.fix-debt` | per debt | `docs/kanban/debt-[slug].md`, worktree `refactor/[slug]`, one commit, PR |
-| `/speckit.sdd-workflow.worktrees` | any time | the live board: worktrees with their kanban status |
-| `/speckit.sdd-workflow.finish` | after review | confirmed squash merge, default branch updated, kanban closed, worktree removed |
+| `/speckit.sdd-workflow.fix-bug` | per bug | `docs/kanban/bug-[slug].md`, branch `bugfix/[slug]`, regression test, one commit, PR |
+| `/speckit.sdd-workflow.fix-debt` | per debt | `docs/kanban/debt-[slug].md`, branch `refactor/[slug]`, one commit, PR |
+| `/speckit.sdd-workflow.finish` | after review | confirmed squash merge, default branch updated, kanban closed, branch deleted |
 | `/speckit.sdd-workflow.import-notion` | once, v1.x only | migrates a Notion board into `docs/kanban/` |
 
 ## Lifecycle
@@ -39,8 +38,8 @@ bugs and debt go `reported → in-progress → resolved`. Any item can be `aband
 ## Installation
 
 ```bash
-specify extension add sdd-workflow --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v4.0.0.zip
-specify preset add sdd-workflow --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v4.0.0.zip
+specify extension add sdd-workflow --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v4.1.0.zip
+specify preset add sdd-workflow --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v4.1.0.zip
 ```
 
 ### Updating every project and the global skills

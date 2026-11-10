@@ -3,8 +3,8 @@ schema_version: "1.0"
 extension:
   id: "sdd-workflow"
   name: "SDD Workflow Extra"
-  version: "4.0.0"
-  description: "Adds product PRD, Software Design Document (SDD), local Kanban (docs/kanban/), lean bug/tech-debt fixes and worktree lifecycle (list, finish) to spec-kit. One markdown file per item, committed with the work. No external services."
+  version: "4.1.0"
+  description: "Adds product PRD, Software Design Document (SDD), local Kanban (docs/kanban/), lean bug/tech-debt fixes and item closing (finish) to spec-kit. One markdown file per item, committed with the work. No external services."
   author: "Felipe Faustini"
   repository: "https://github.com/fabfdev/spec-kit-extension-sdd-workflow"
   license: "MIT"
@@ -28,19 +28,15 @@ provides:
 
     - name: "speckit.sdd-workflow.fix-bug"
       file: "commands/speckit.sdd-workflow.fix-bug.md"
-      description: "Register and fix a bug in a dedicated worktree: regression test, test gate, one commit, PR."
+      description: "Register and fix a bug on its own branch: regression test, test gate, one commit, PR."
 
     - name: "speckit.sdd-workflow.fix-debt"
       file: "commands/speckit.sdd-workflow.fix-debt.md"
-      description: "Register and resolve technical debt in a dedicated worktree: test gate, one commit, PR."
-
-    - name: "speckit.sdd-workflow.worktrees"
-      file: "commands/speckit.sdd-workflow.worktrees.md"
-      description: "List active worktrees with their docs/kanban/ status and optionally switch into one."
+      description: "Register and resolve technical debt on its own branch: test gate, one commit, PR."
 
     - name: "speckit.sdd-workflow.finish"
       file: "commands/speckit.sdd-workflow.finish.md"
-      description: "Confirm and merge an item's PR, update the default branch, close its kanban entry and remove the worktree."
+      description: "Confirm and merge an item's PR, update the default branch, close its kanban entry and delete the branch."
 
     - name: "speckit.sdd-workflow.import-notion"
       file: "commands/speckit.sdd-workflow.import-notion.md"
@@ -52,4 +48,3 @@ tags:
   - "architecture"
   - "bug-tracking"
   - "tech-debt"
-  - "worktrees"

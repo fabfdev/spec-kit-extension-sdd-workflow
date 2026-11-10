@@ -1,5 +1,5 @@
 ---
-description: Register and resolve technical debt as docs/kanban/debt-[slug].md in a dedicated worktree, with a test gate, one commit and a PR.
+description: Register and resolve technical debt as docs/kanban/debt-[slug].md on its own branch, with a test gate, one commit and a PR.
 ---
 
 ## User Input
@@ -10,7 +10,7 @@ $ARGUMENTS
 
 ## Step 1 — Register or resume
 
-If `$ARGUMENTS` names an existing `docs/kanban/debt-[slug].md`: `resolved` → tell the user and stop; `in-progress` → work in its worktree (check `git worktree list`, default format) and go to Step 3.
+If `$ARGUMENTS` names an existing `docs/kanban/debt-[slug].md`: `resolved` → tell the user and stop; `in-progress` → `git switch refactor/[slug]` (held by a legacy worktree: work in that path) and go to Step 3.
 
 Otherwise derive a slug (kebab-case, ≤5 words) and draft:
 
@@ -21,7 +21,6 @@ type: debt
 status: reported
 slug: [slug]
 branch: refactor/[slug]
-worktree:
 priority: low | medium | high
 pr:
 created: YYYY-MM-DD
@@ -36,15 +35,17 @@ updated: YYYY-MM-DD
 
 Ask in one round: priority (if unclear) and **resolve now or defer?** Defer: save it in the current checkout, commit `docs: register debt [slug]`, stop.
 
-## Step 2 — Worktree
+## Step 2 — Branch
 
-If `.worktrees/` is not in `.gitignore`, add it and commit `chore: ignore .worktrees/`. Reuse an existing worktree; otherwise (drop `-b` if the branch already exists):
+The working tree must be clean; otherwise ask the user to commit or stash first. Branch from the up-to-date default branch (if the branch already exists, just `git switch refactor/[slug]`):
 
 ```bash
-git worktree add .worktrees/refactor-[slug] -b refactor/[slug]
+git switch [default-branch]
+git pull --ff-only
+git switch -c refactor/[slug]
 ```
 
-Inside it save the kanban file with `status: in-progress` and `worktree: .worktrees/refactor-[slug]`.
+Save the kanban file with `status: in-progress`.
 
 ## Step 3 — Resolve
 
@@ -78,5 +79,5 @@ Report the change and the gate result, then: "Run `/clear`; merge with `/speckit
 
 ## Constraints
 
-- Never change the main checkout; worktree creation is idempotent.
+- Never change the default branch directly; re-runs are idempotent.
 - No commit with failing tests. Kanban: `reported → in-progress → resolved`.
