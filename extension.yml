@@ -3,8 +3,8 @@ schema_version: "1.0"
 extension:
   id: "sdd-workflow"
   name: "SDD Workflow Extra"
-  version: "3.0.0"
-  description: "Adaptive SDD workflow with milestone approvals, consolidated tasks, incremental analysis, deterministic local checks, atomic commits and independent final review."
+  version: "4.0.0"
+  description: "Adds product PRD, Software Design Document (SDD), local Kanban (docs/kanban/), lean bug/tech-debt fixes and worktree lifecycle (list, finish) to spec-kit. One markdown file per item, committed with the work. No external services."
   author: "Felipe Faustini"
   repository: "https://github.com/fabfdev/spec-kit-extension-sdd-workflow"
   license: "MIT"
@@ -16,41 +16,40 @@ provides:
   commands:
     - name: "speckit.sdd-workflow.setup"
       file: "commands/speckit.sdd-workflow.setup.md"
-      description: "Initialize the SDD workflow: creates the local docs/ scaffold, including docs/kanban/ (the tracking board — schema + status lifecycle) and docs/health/scan.md. Rerun safely to fill missing scaffold or migrate schema."
+      description: "Initialize the SDD workflow: docs/kanban/ (schema + status lifecycle) and docs/health/scan.md. Run once per project."
 
     - name: "speckit.sdd-workflow.product-prd"
       file: "commands/speckit.sdd-workflow.product-prd.md"
-      description: "Create the product-level PRD (docs/core/prd.md) — the founding document. Run once at project start."
+      description: "Create the product-level PRD (docs/core/prd.md). Run once at project start."
 
     - name: "speckit.sdd-workflow.sdd"
       file: "commands/speckit.sdd-workflow.sdd.md"
-      description: "Create the Software Design Document (docs/core/sdd.md) — the global technical foundation. Run after product PRD."
+      description: "Create the Software Design Document (docs/core/sdd.md). Run after the product PRD."
 
     - name: "speckit.sdd-workflow.fix-bug"
       file: "commands/speckit.sdd-workflow.fix-bug.md"
-      description: "Register and fix a bug as docs/kanban/bug-[slug].md. Creates a dedicated worktree on a bugfix branch, fixes, runs tests, and opens a PR with kanban status tracking throughout."
+      description: "Register and fix a bug in a dedicated worktree: regression test, test gate, one commit, PR."
 
     - name: "speckit.sdd-workflow.fix-debt"
       file: "commands/speckit.sdd-workflow.fix-debt.md"
-      description: "Register and resolve technical debt as docs/kanban/debt-[slug].md. Creates a dedicated worktree on a refactor branch, implements the resolution, runs tests, and opens a PR with kanban status tracking throughout."
+      description: "Register and resolve technical debt in a dedicated worktree: test gate, one commit, PR."
 
     - name: "speckit.sdd-workflow.worktrees"
       file: "commands/speckit.sdd-workflow.worktrees.md"
-      description: "List all active worktrees (features, bugs, tech debt) enriched with their docs/kanban/ status, and optionally switch into one."
+      description: "List active worktrees with their docs/kanban/ status and optionally switch into one."
 
     - name: "speckit.sdd-workflow.finish"
       file: "commands/speckit.sdd-workflow.finish.md"
-      description: "Close out the current feature/bug/debt worktree: confirms merge, reconciles tracking on the default branch, and safely removes the clean worktree."
+      description: "Confirm and merge an item's PR, update the default branch, close its kanban entry and remove the worktree."
 
     - name: "speckit.sdd-workflow.import-notion"
       file: "commands/speckit.sdd-workflow.import-notion.md"
-      description: "One-time migration from a v1.x Notion Kanban board into docs/kanban/. Reads the Notion database via MCP and writes one markdown file per item. The only command that touches Notion."
+      description: "One-time migration from a v1.x Notion Kanban board into docs/kanban/."
 
 tags:
   - "sdd"
   - "product-prd"
   - "architecture"
   - "bug-tracking"
-  - "health"
   - "tech-debt"
   - "worktrees"
