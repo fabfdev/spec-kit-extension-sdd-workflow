@@ -18,6 +18,7 @@ at most 3 KB each and run one item per session; `/clear` between them.
 | `/speckit.sdd-workflow.sdd` | once, after the PRD | `docs/core/sdd.md`, the architecture authority the preset commands read |
 | `/speckit.sdd-workflow.fix-bug` | per bug | `docs/kanban/bug-[slug].md`, branch `bugfix/[slug]`, regression test, one commit, PR |
 | `/speckit.sdd-workflow.fix-debt` | per debt | `docs/kanban/debt-[slug].md`, branch `refactor/[slug]`, one commit, PR |
+| `/speckit.sdd-workflow.implement-all` | per feature, instead of `/speckit.implement` + `/clear` per task | one fresh Opus subagent per task, short fixed report each, stops on the first problem; final checks and PR at the end |
 | `/speckit.sdd-workflow.finish` | after review | confirmed squash merge, default branch updated, kanban closed, branch deleted |
 | `/speckit.sdd-workflow.import-notion` | once, v1.x only | migrates a Notion board into `docs/kanban/` |
 
@@ -38,8 +39,8 @@ bugs and debt go `reported → in-progress → resolved`. Any item can be `aband
 ## Installation
 
 ```bash
-specify extension add sdd-workflow --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v4.1.0.zip
-specify preset add sdd-workflow --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v4.1.0.zip
+specify extension add sdd-workflow --from https://github.com/fabfdev/spec-kit-extension-sdd-workflow/archive/refs/tags/v4.2.0.zip
+specify preset add sdd-workflow --from https://github.com/fabfdev/spec-kit-preset-sdd-workflow/archive/refs/tags/v4.2.0.zip
 ```
 
 ### Updating every project and the global skills

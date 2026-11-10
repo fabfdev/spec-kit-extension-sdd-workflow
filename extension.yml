@@ -3,7 +3,7 @@ schema_version: "1.0"
 extension:
   id: "sdd-workflow"
   name: "SDD Workflow Extra"
-  version: "4.1.0"
+  version: "4.2.0"
   description: "Adds product PRD, Software Design Document (SDD), local Kanban (docs/kanban/), lean bug/tech-debt fixes and item closing (finish) to spec-kit. One markdown file per item, committed with the work. No external services."
   author: "Felipe Faustini"
   repository: "https://github.com/fabfdev/spec-kit-extension-sdd-workflow"
@@ -33,6 +33,10 @@ provides:
     - name: "speckit.sdd-workflow.fix-debt"
       file: "commands/speckit.sdd-workflow.fix-debt.md"
       description: "Register and resolve technical debt on its own branch: test gate, one commit, PR."
+
+    - name: "speckit.sdd-workflow.implement-all"
+      file: "commands/speckit.sdd-workflow.implement-all.md"
+      description: "Implement all remaining tasks of a feature, one fresh Opus subagent per task with a short report; stops on the first problem."
 
     - name: "speckit.sdd-workflow.finish"
       file: "commands/speckit.sdd-workflow.finish.md"
